@@ -27,10 +27,10 @@ def insert_update_delete_many(qry,val):
     )
     cmd=con.cursor()
     cmd.executemany(qry,val)
-    id=cmd.lastrowid
+    rows=cmd.lastrowid    
     con.commit()
     con.close()
-    return  id
+    return rows
 
 def select_all(qry):
     con=pymysql.connect(
