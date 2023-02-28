@@ -1,4 +1,4 @@
-from utils import random_string, create_avatar
+from utils import random_string, create_avatar, password_hash,DEFAULT_PASSWORD
 from database_connection import *
 import io
 from flask import *
@@ -35,16 +35,16 @@ def customer_group():
         address2 = line.get('address2')
         name = first_name+" "+last_name
         time = datetime.datetime.now()
-        avatar = create_avatar(name,create=True)
+        # avatar = create_avatar(name)
         customer_group.append((name, email, tenant_id, time, bulk_insert_id))
         address.append((tenant_id, address1, address2, time, bulk_insert_id))
         emails.append(email)
         lines.append(address1)
 
-        single_insert_responce = single_insert(name, email, tenant_id, time)
-        single_delete_responce = single_delete(email)
+    #     single_insert_responce = single_insert(name, email, tenant_id, time)
+    #     single_delete_responce = single_delete(email)
     
-    bulk_delete_responce = bulk_delete_custemer_group_and_addresses(emails,lines)
+    # bulk_delete_responce = bulk_delete_custemer_group_and_addresses(emails,lines)
     customer_group_id_and_emails = bulk_insert_custemer_group(customer_group,bulk_insert_id,insert=True,select=True)
     address_id_and_lines = bulk_insert_addresses(address,bulk_insert_id,insert=True,select=True)
 
@@ -55,6 +55,7 @@ def customer_group():
     users_data_and_customer_group = []
     id_address = []
     
+    hash_password = password_hash(DEFAULT_PASSWORD)
     reader = csv.DictReader(io.StringIO(import_sheet))
     for line in reader:
         email = line.get('email')
@@ -75,7 +76,7 @@ def customer_group():
                     (phone, customer_group_id_and_email[0], tenant_id, datetime.datetime.now()))
                 # map customer_group_pk and first name and last name for users table
                 users_data_and_customer_group.append(
-                    (name, first_name, last_name, email, customer_group_id_and_email[0], random_string(10), datetime.datetime.now()))
+                    (name, first_name, last_name, email, customer_group_id_and_email[0],hash_password,datetime.datetime.now()))
 
                 customer_group_pk_and_address_pk.append(
                     customer_group_id_and_email[0])
