@@ -8,7 +8,6 @@ import datetime
 app = Flask(__name__)
 
 app.secret_key = "f#6=zf!2=n@ed-=6g17&k4e4fl#d4v&l*v6q5_6=8jz1f98v#"
-UPLOAD_FOLDER = "media"
 
 
 @app.route("/api/customer_group", methods=['POST'])
@@ -36,7 +35,7 @@ def customer_group():
         address2 = line.get('address2')
         name = first_name+" "+last_name
         time = datetime.datetime.now()
-        avatar = create_avatar(name)
+        avatar = create_avatar(name,create=True)
         customer_group.append((name, email, tenant_id, time, bulk_insert_id))
         address.append((tenant_id, address1, address2, time, bulk_insert_id))
         emails.append(email)
