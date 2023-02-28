@@ -1,7 +1,7 @@
-from utils import random_string, create_avatar, password_hash,DEFAULT_PASSWORD
+from utils import random_string, create_avatar, password_hash, DEFAULT_PASSWORD
 from database_connection import *
 import io
-from flask import *
+from flask import * #Flask, request, jsonify, make_response
 import csv
 import datetime
 
@@ -25,7 +25,7 @@ def customer_group():
     address = []
     emails = []
     lines = []
-    tenant_id = 15
+    tenant_id = 15 
 
     for line in reader:
         first_name = line.get('first_name')
@@ -35,16 +35,16 @@ def customer_group():
         address2 = line.get('address2')
         name = first_name+" "+last_name
         time = datetime.datetime.now()
-        # avatar = create_avatar(name)
+        avatar = create_avatar(name)
         customer_group.append((name, email, tenant_id, time, bulk_insert_id))
         address.append((tenant_id, address1, address2, time, bulk_insert_id))
         emails.append(email)
         lines.append(address1)
 
-    #     single_insert_responce = single_insert(name, email, tenant_id, time)
-    #     single_delete_responce = single_delete(email)
+        single_insert_responce = single_insert(name, email, tenant_id, time)
+        single_delete_responce = single_delete(email)
     
-    # bulk_delete_responce = bulk_delete_custemer_group_and_addresses(emails,lines)
+    bulk_delete_responce = bulk_delete_custemer_group_and_addresses(emails,lines)
     customer_group_id_and_emails = bulk_insert_custemer_group(customer_group,bulk_insert_id,insert=True,select=True)
     address_id_and_lines = bulk_insert_addresses(address,bulk_insert_id,insert=True,select=True)
 
@@ -180,7 +180,6 @@ def bulk_insert_custemer_group(customer_group,bulk_insert_id,insert=False,select
     return customer_group_id_and_emails
 
 
-
 def bulk_insert_addresses(address,bulk_insert_id,select=False,insert=False):
 
     address_id_and_lines: tuple = ()
@@ -212,6 +211,7 @@ def bulk_insert_customer_group_addresses(customer_group_addresses,id_address,sel
         print(f"customer_group_addresses : {str(e)}")
     return customer_group_addresses_all
 
+
 def bulk_insert_users(users_data_and_customer_group,select=False,insert=False):
     users: tuple = ()
     try:
@@ -224,6 +224,7 @@ def bulk_insert_users(users_data_and_customer_group,select=False,insert=False):
     except Exception as e:
         print(f"users : {str(e)}")
     return users
+
 
 def bulk_insert_phones(phone_number_and_customer_group,select=False,insert=False):
     phones: tuple = ()
