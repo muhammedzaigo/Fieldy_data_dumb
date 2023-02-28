@@ -69,8 +69,7 @@ def customer_group():
         customer_group_pk_and_address_pk = []
 
         for customer_group_id_and_email in customer_group_id_and_emails:
-            if email == customer_group_id_and_email[1]:
-
+            if email == customer_group_id_and_email[1] and name == customer_group_id_and_email[2]:
                 # map customer_group_pk and phone number for phones table
                 phone_number_and_customer_group.append(
                     (phone, customer_group_id_and_email[0], tenant_id, datetime.datetime.now()))
@@ -174,7 +173,7 @@ def bulk_insert_custemer_group(customer_group,bulk_insert_id,insert=False,select
             qry = '''INSERT INTO `customer_group`(`name`,`email`,`tenant_id`,`created_at`,`bulk_insert_id`) VALUES (%s,%s,%s,%s,%s)'''
             insert_update_delete_many(qry, customer_group)
         if select:
-            qry = ''' SELECT `id_customer_group`,`email` FROM `customer_group` WHERE `bulk_insert_id` = %s'''
+            qry = ''' SELECT `id_customer_group`,`email`,`name` FROM `customer_group` WHERE `bulk_insert_id` = %s'''
             customer_group_id_and_emails = select_filter(qry, bulk_insert_id)
     except Exception as e:
         print(f"customer_group : {str(e)}")
