@@ -1,10 +1,10 @@
-from utils import random_string, create_avatar, password_hash, DEFAULT_PASSWORD
+from utils import password_hash,TENANT_ID, DEFAULT_PASSWORD, create_avatar_then_dumb_files_db_and_map_customer_group_thread
 from database_connection import *
 import io
 from flask import * #Flask, request, jsonify, make_response
 import csv
 import datetime
-
+import threading
 app = Flask(__name__)
 
 app.secret_key = "f#6=zf!2=n@ed-=6g17&k4e4fl#d4v&l*v6q5_6=8jz1f98v#"
@@ -25,7 +25,6 @@ def customer_group():
     address = []
     emails = []
     lines = []
-    tenant_id = 15 
 
     for line in reader:
         first_name = line.get('first_name')
@@ -35,18 +34,25 @@ def customer_group():
         address2 = line.get('address2')
         name = first_name+" "+last_name
         time = datetime.datetime.now()
-        avatar = create_avatar(name)
-        customer_group.append((name, email, tenant_id, time, bulk_insert_id))
-        address.append((tenant_id, address1, address2, time, bulk_insert_id))
-        emails.append(email)
-        lines.append(address1)
-
-        single_insert_responce = single_insert(name, email, tenant_id, time)
-        single_delete_responce = single_delete(email)
+        customer_group.append((name, email, TENANT_ID, time, bulk_insert_id))
+        address.append((TENANT_ID, address1, address2, time, bulk_insert_id))
+        
+        # emails.append(email)
+        # lines.append(address1)
+        
+        # single_insert_responce = single_insert(name, email, TENANT_ID, time)
+        # single_delete_responce = single_delete(email)
+        
+    # bulk_delete_responce = bulk_delete_custemer_group_and_addresses(emails,lines)
     
-    bulk_delete_responce = bulk_delete_custemer_group_and_addresses(emails,lines)
     customer_group_id_and_emails = bulk_insert_custemer_group(customer_group,bulk_insert_id,insert=True,select=True)
     address_id_and_lines = bulk_insert_addresses(address,bulk_insert_id,insert=True,select=True)
+
+
+    create_avatar_then_dumb_files_db_and_map_customer_group = threading.Thread(
+        target=create_avatar_then_dumb_files_db_and_map_customer_group_thread,args=(customer_group_id_and_emails,bulk_insert_id,))
+    create_avatar_then_dumb_files_db_and_map_customer_group.start()
+    
 
     # ---------------------------------------------------------------- Map a customer_group_pk and address_pk ------------------------------------------------------------------
 
@@ -72,7 +78,7 @@ def customer_group():
             if email == customer_group_id_and_email[1] and name == customer_group_id_and_email[2]:
                 # map customer_group_pk and phone number for phones table
                 phone_number_and_customer_group.append(
-                    (phone, customer_group_id_and_email[0], tenant_id, datetime.datetime.now()))
+                    (phone, customer_group_id_and_email[0], TENANT_ID, datetime.datetime.now()))
                 # map customer_group_pk and first name and last name for users table
                 users_data_and_customer_group.append(
                     (name, first_name, last_name, email, customer_group_id_and_email[0],hash_password,datetime.datetime.now()))
@@ -89,25 +95,17 @@ def customer_group():
                 id_address.append(address_id)
                 break
 
-        customer_group_pk_and_address_pk.insert(0, tenant_id)
+        customer_group_pk_and_address_pk.insert(0, TENANT_ID)
         customer_group_pk_and_address_pk.insert(3, datetime.datetime.now())
         customer_group_addresses.append(tuple(customer_group_pk_and_address_pk))
 
     customer_group_addresses_all = bulk_insert_customer_group_addresses(customer_group_addresses,id_address,insert=True)
     users = bulk_insert_users(users_data_and_customer_group,insert=True)
     phones = bulk_insert_phones(phone_number_and_customer_group,insert=True)
-
+    
     data = {
         "diffence":  str(datetime.datetime.now() - start),
         'message': 'File uploaded successfully',
-        # "customer_group_id_and_emails":customer_group_id_and_emails,
-        # "address_id_and_lines":address_id_and_lines,
-        # "customer_group_addresses" : customer_group_addresses,
-        # "customer_group_addresses_all" : customer_group_addresses_all,
-        # "phone_number_and_customer_group_pk":phone_number_and_customer_group_pk,
-        # "users_data_and_customer_group":users_data_and_customer_group,
-        # "users":users,
-        # "phones":phones
     }
     response = make_response(jsonify(data), 200)
     response.headers["Content-Type"] = "application/json"
@@ -132,12 +130,12 @@ def bulk_insert(insert=False,select=False):
     return bulk_insert_id
 
 
-def single_insert(name, email, tenant_id, time,insert=False):
+def single_insert(name, email, TENANT_ID, time,insert=False):
     return_val : tuple = ()
     try:
         if insert :
-            qry = "INSERT INTO `customer_group`(`name`,`email`,`tenant_id`,`created_at`) VALUES (%s,%s,%s,%s)"
-            val = (name, email, tenant_id, time)
+            qry = "INSERT INTO `customer_group`(`name`,`email`,`TENANT_ID`,`created_at`) VALUES (%s,%s,%s,%s)"
+            val = (name, email, TENANT_ID, time)
             return_val = insert_update_delete(qry, val)
     except Exception as e:
         print(str(e))
@@ -170,7 +168,7 @@ def bulk_insert_custemer_group(customer_group,bulk_insert_id,insert=False,select
     customer_group_id_and_emails: tuple = ()
     try:
         if insert:
-            qry = '''INSERT INTO `customer_group`(`name`,`email`,`tenant_id`,`created_at`,`bulk_insert_id`) VALUES (%s,%s,%s,%s,%s)'''
+            qry = '''INSERT INTO `customer_group`(`name`,`email`,`TENANT_ID`,`created_at`,`bulk_insert_id`) VALUES (%s,%s,%s,%s,%s)'''
             insert_update_delete_many(qry, customer_group)
         if select:
             qry = ''' SELECT `id_customer_group`,`email`,`name` FROM `customer_group` WHERE `bulk_insert_id` = %s'''
@@ -199,7 +197,7 @@ def bulk_insert_customer_group_addresses(customer_group_addresses,id_address,sel
     customer_group_addresses_all: tuple = ()
     try:
         if insert:
-            qry = "INSERT INTO `customer_group_addresses`(`tenant_id`,`id_customer_group`,`id_address`,`created_at`) VALUES (%s,%s,%s,%s)"
+            qry = "INSERT INTO `customer_group_addresses`(`TENANT_ID`,`id_customer_group`,`id_address`,`created_at`) VALUES (%s,%s,%s,%s)"
             insert_update_delete_many(qry, customer_group_addresses)
         if delete:
             qry = "DELETE FROM `customer_group_addresses` WHERE `id_address` IN (%s) "
@@ -230,7 +228,7 @@ def bulk_insert_phones(phone_number_and_customer_group,select=False,insert=False
     phones: tuple = ()
     try:
         if insert:
-            qry = "INSERT INTO `phones`(`number`,`phoneable_id`,`tenant_id`,`created_at`) VALUES (%s,%s,%s,%s)"
+            qry = "INSERT INTO `phones`(`number`,`phoneable_id`,`TENANT_ID`,`created_at`) VALUES (%s,%s,%s,%s)"
             insert_update_delete_many(qry, phone_number_and_customer_group)
         if select:
             qry = '''  SELECT `number`,`phoneable_id`  FROM `phones`'''
