@@ -83,8 +83,7 @@ def customer_group():
                 users_data_and_customer_group.append(
                     (name, first_name, last_name, email, customer_group_id_and_email[0],hash_password,datetime.datetime.now()))
 
-                customer_group_pk_and_address_pk.append(
-                    customer_group_id_and_email[0])
+                customer_group_pk_and_address_pk.append(customer_group_id_and_email[0])
                 break
 
         for address_id_and_line in address_id_and_lines:
