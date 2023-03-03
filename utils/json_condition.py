@@ -63,7 +63,7 @@ JSON_CONDITION = {
         "label_name": "Property Zip Code",
         "label_slug": "zipcode",
         "parent": "addresses",
-        "table_slug": "zip_code"
+        "table_slug": "zipcode"
     },
     "organization_zipcode": {
         "entity": "organization",
