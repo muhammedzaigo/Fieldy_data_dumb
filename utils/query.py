@@ -2,7 +2,7 @@ from database_connection import *
 import datetime
 
 
-def bulk_insert(insert=False,select=False):
+def get_bulk_insert_id(insert=False,select=False):
     bulk_insert_id: int = 0
     bulk_insert_number = 1
     try:
@@ -87,7 +87,7 @@ def bulk_insert_customer_group_addresses(customer_group_addresses,id_address,sel
     customer_group_addresses_all: tuple = ()
     try:
         if insert:
-            qry = "INSERT INTO `customer_group_addresses`(`TENANT_ID`,`id_customer_group`,`id_address`,`created_at`) VALUES (%s,%s,%s,%s)"
+            qry = "INSERT INTO `customer_group_addresses`(`tenant_id`,`id_customer_group`,`id_address`,`created_at`) VALUES (%s,%s,%s,%s)"
             insert_update_delete_many(qry, customer_group_addresses)
         if delete:
             qry = "DELETE FROM `customer_group_addresses` WHERE `id_address` IN (%s) "
