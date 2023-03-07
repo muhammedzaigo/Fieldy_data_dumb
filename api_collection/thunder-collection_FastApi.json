@@ -1,0 +1,77 @@
+{
+    "client": "Thunder Client",
+    "collectionName": "FastApi",
+    "dateExported": "2023-03-07T12:44:03.933Z",
+    "version": "1.1",
+    "folders": [],
+    "requests": [
+        {
+            "_id": "59b16fca-95a3-4ecb-ae90-8fbbbcad11ce",
+            "colId": "336b49d3-73f0-4ffa-8f32-d923fd043ca8",
+            "containerId": "",
+            "name": "bulk import with json",
+            "url": "http://127.0.0.1:5000/api/bulk_import",
+            "method": "POST",
+            "sortNum": 10000,
+            "created": "2023-02-23T10:38:25.949Z",
+            "modified": "2023-03-07T12:40:18.056Z",
+            "headers": [],
+            "params": [],
+            "body": {
+                "type": "formdata",
+                "raw": "",
+                "form": [
+                    {
+                        "name": "json_format",
+                        "value": "{ \"organization_company_name\": { \"entity\": \"organization\", \"is_required\": \"1\", \"label_name\": \"Organization Name\", \"label_slug\": \"company_name\", \"parent\": \"\", \"table_slug\": \"name\" }, \"organization_website\": { \"entity\": \"organization\", \"is_required\": \"0\", \"label_name\": \"Website\", \"label_slug\": \"website\", \"parent\": \"\", \"table_slug\": \"website\" }, \"organization_line_1\": { \"entity\": \"organization\", \"is_required\": \"0\", \"label_name\": \"Address 1\", \"label_slug\": \"line_1\", \"parent\": \"\", \"table_slug\": \"line_1\" }, \"organization_line_2\": { \"entity\": \"organization\", \"is_required\": \"0\", \"label_name\": \"Address 2\", \"label_slug\": \"line_2\", \"parent\": \"\", \"table_slug\": \"line_2\" }, \"organization_city\": { \"entity\": \"organization\", \"is_required\": \"0\", \"label_name\": \"City\", \"label_slug\": \"city\", \"parent\": \"\", \"table_slug\": \"city\" }, \"organization_state\": { \"entity\": \"organization\", \"is_required\": \"0\", \"label_name\": \"State\", \"label_slug\": \"state\", \"parent\": \"\", \"table_slug\": \"state\" }, \"organization_zipcode\": { \"entity\": \"organization\", \"is_required\": \"0\", \"label_name\": \"Zip Code\", \"label_slug\": \"zipcode\", \"parent\": \"\", \"table_slug\": \"zipcode\" }, \"organization_email\": { \"entity\": \"organization\", \"is_required\": \"0\", \"label_name\": \"Email\", \"label_slug\": \"email\", \"parent\": \"\", \"table_slug\": \"email\" }, \"organization_phones_number\": { \"entity\": \"organization\", \"is_required\": \"0\", \"label_name\": \"Phone Number\", \"label_slug\": \"number\", \"parent\": \"phones\", \"table_slug\": \"number\" } }"
+                    },
+                    {
+                        "name": "tanant_id",
+                        "value": "15"
+                    }
+                ],
+                "files": [
+                    {
+                        "name": "file",
+                        "value": "c:\\Users\\ZaigoPC\\Exper\\Fieldy\\Flask\\sheets\\Organization.csv"
+                    }
+                ]
+            },
+            "tests": []
+        },
+        {
+            "_id": "f9c25ee2-49bc-48d6-9a50-ed488aab0450",
+            "colId": "336b49d3-73f0-4ffa-8f32-d923fd043ca8",
+            "containerId": "",
+            "name": "xlsx covert csv files",
+            "url": "http://127.0.0.1:5000/api/xlsx_convert_csv",
+            "method": "POST",
+            "sortNum": 20000,
+            "created": "2023-03-07T06:20:30.565Z",
+            "modified": "2023-03-07T06:44:40.786Z",
+            "headers": [],
+            "params": [],
+            "body": {
+                "type": "formdata",
+                "raw": "",
+                "form": [
+                    {
+                        "name": "convert",
+                        "value": "True"
+                    },
+                    {
+                        "name": "read",
+                        "value": "True"
+                    }
+                ],
+                "files": [
+                    {
+                        "name": "file",
+                        "value": "c:\\Users\\ZaigoPC\\Downloads\\New Bulk Import.xlsx"
+                    }
+                ]
+            },
+            "tests": []
+        }
+    ]
+}
