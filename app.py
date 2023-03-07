@@ -81,7 +81,7 @@ def currect_json_map(json_format):
             value["parent"] = "customer_group"
         if value["table_slug"] == "zipcode":
             value["table_slug"] = "zip_code"
-        if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code"]:
+        if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code","branch_name"]:
             value["parent"] = "addresses"
         if value["table_slug"] in ["number"]:
             value["parent"] = "phones"
