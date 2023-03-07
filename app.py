@@ -24,12 +24,16 @@ CONTACT_AND_ORGAZANAIZATION = 3
 @app.route("/api/bulk_import", methods=['POST'])
 def bulk_import_api():
     if request.method == 'POST':
+        
         if 'file' not in request.files:
-            return jsonify({'error': 'No file uploaded'})
+            return make_response(jsonify({'message': 'No file uploaded'}),400)
 
         file = request.files['file']
-        TENANT_ID = request.form['tanant_id']
-        json_format = request.form['json_format']
+        TENANT_ID = request.form.get('tanant_id',None)
+        json_format = request.form.get('json_format',None)
+
+        if TENANT_ID == None or json_format == None:
+            return make_response(jsonify({'message': 'tanant_id or json_format is required'}),400)
 
         import_sheet = file.read().decode('utf-8')
         reader = csv.DictReader(io.StringIO(import_sheet))
@@ -68,7 +72,7 @@ def bulk_import_api():
             contact_list, organization_list)
 
         data = {
-            'message': 'File uploaded successfully',
+            'message': 'File imported successfully',
         }
         response = make_response(jsonify(data), 200)
         response.headers["Content-Type"] = "application/json"
