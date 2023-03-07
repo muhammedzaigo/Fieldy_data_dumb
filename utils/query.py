@@ -4,13 +4,11 @@ import datetime
 
 def get_bulk_insert_id(insert=False,select=False):
     bulk_insert_id: int = 0
-    bulk_insert_number = 1
     try:
         if insert:
-            qry = '''INSERT INTO `bulk_insert`(`bulk_insert_number`,`created_at`) VALUES (%s,%s)'''
-            val = (bulk_insert_number, datetime.datetime.now())
+            qry = '''INSERT INTO `bulk_insert`(`created_at`) VALUES (%s)'''
+            val = (datetime.datetime.now())
             last_row_id = insert_update_delete(qry,val)
-            
         if select:
             qry = '''SELECT `id` FROM `bulk_insert` ORDER BY id DESC LIMIT 1'''
             last_row_id = select_all(qry)

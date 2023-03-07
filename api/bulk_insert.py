@@ -2,18 +2,16 @@ from utils.json_condition import *
 from utils.utils import (password_hash, TENANT_ID, SECRET_KEY, DEFAULT_PASSWORD,
                          create_avatar_then_dumb_files_db_and_map_customer_group_thread)
 import io
-from flask import *
 import csv
 import datetime
 import threading
 from utils.query import *
+from flask import *
+bulk_insert = Blueprint('bulk_insert', __name__)
 
-app = Flask(__name__)
-app.secret_key = SECRET_KEY
 
-
-@app.route("/api/customer_group", methods=['POST'])
-def customer_group():
+@bulk_insert.route("/bulk_insert", methods=["POST"])
+def bulk_insert_api():
     start = datetime.datetime.now()
 
     if 'file' not in request.files:

@@ -23,7 +23,7 @@ def insert_update_delete_many(qry,val):
     rows=cmd.lastrowid    
     connection.commit()
     connection.close()
-    return rows
+    return 
 
 
 def select_all(qry):
