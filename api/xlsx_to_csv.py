@@ -7,7 +7,6 @@ from flask import *
 xlsx_convert_csv = Blueprint('xlsx_convert_csv', __name__)
 
 SHEET_FOLDER = "sheets"
-XLSX_FILE_NAME = "123.xlsx"
 
 @xlsx_convert_csv.route("/xlsx_convert_csv", methods=["POST"])
 def xlsx_to_csv_api():
