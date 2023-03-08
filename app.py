@@ -39,11 +39,12 @@ def bulk_import_api():
         reader = csv.DictReader(io.StringIO(import_sheet))
         json_format = json.loads(json_format)
         which_user = which_user_types_imported(json_format)
+        json_format = currect_json_map(json_format)
 
         json_count = len(json_format.keys())
         field_names = reader.fieldnames
         splite_field_name_with_json_count = field_names[0:json_count]
-        json_format = currect_json_map(json_format)
+        
         contact_customer_list = []
         organization_customer_list = []
         contact_list = []
@@ -116,8 +117,8 @@ def bulk_insert_using_bulk_type(TENANT_ID, bulk_insert_id, which_user, contact_c
         contact =threading.Thread(target=contact_thread,args=(contact_list, contact_customer_group_addresess_list, TENANT_ID))
         contact.start()
         organization =threading.Thread(target=organization_thread,args=(organization_list,organization_customer_group_addresess_list,TENANT_ID))
-        organization.start()
-    return
+        organization.start() 
+    return 
 
 
 def contact_thread(contact_list, contact_customer_group_addresess_list, TENANT_ID):
