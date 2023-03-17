@@ -150,3 +150,33 @@ def bulk_update_customer_group(update_file_id_custemer_group,insert=False):
     except Exception as e:
         print(f"update_customer_group : {str(e)}")
     return customer_group_id_and_emails
+
+
+
+def bulk_insert_dynamic(table_name, column_names, values, insert=False):
+    customer_group_id_and_emails: tuple = ()
+    try:
+        if insert:
+            make_presentage_s = ",".join(["%s"] * len(values[0]))
+            column_names = "({})".format(
+                ", ".join("`{}`".format(name) for name in column_names))
+            qry = f'''INSERT INTO `{table_name}` {column_names} VALUES ({make_presentage_s})'''
+            insert_update_delete_many(qry, values)
+    except Exception as e:
+        print(f"insert {table_name} : {str(e)}")
+    return customer_group_id_and_emails
+
+
+def retrive_customer_group_and_addresses_data_use_bulk_insert_id(table_name, bulk_insert_id, custemer_type=None, select_customer_group=False, select_address=False):
+    customer_group_id_and_emails: tuple = ()
+    try:
+        if select_customer_group:
+            qry = ''' SELECT `id_customer_group`,`email`,`name` FROM `customer_group` WHERE `bulk_insert_id` = %s and `customer_type` = %s'''
+            val = (bulk_insert_id, custemer_type)
+            customer_group_id_and_emails = select_filter(qry, val)
+        if select_address:
+            qry = ''' SELECT `id_address`,`line_1`,`line_2` FROM `addresses` WHERE `bulk_insert_id` = %s'''
+            customer_group_id_and_emails = select_filter(qry, bulk_insert_id)
+    except Exception as e:
+        print(f"{table_name} : {str(e)}")
+    return customer_group_id_and_emails

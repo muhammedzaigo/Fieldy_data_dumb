@@ -192,7 +192,6 @@ JSON_CONDITION_3 = {
     "table_slug": "number"
   }
 }
-
 JSON_CONDITION_4 = {
   "organization_company_name": {
     "entity": "organization",
@@ -470,3 +469,4 @@ JSON_CONDITION_4 = {
     "table_slug": "job_title"
   }
 }
+
