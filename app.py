@@ -40,8 +40,7 @@ def send_email(count, file_url, logo_url, filename=None):
             return 'Email sent!'
         except Exception as e:
             return str(e)
-        
-        
+
 
 @app.route("/api/bulk_import", methods=['POST'])
 def bulk_import_api():
@@ -87,9 +86,11 @@ def bulk_import_api():
                 organization_list.append(field_type["organization_list"])
             if len(field_type["invalid_data"]) != 0:
                 invalid_data.append(field_type["invalid_data"])
-            skip_data.append(field_type["skip_data"])
-            
-        send_mail_skip_data_and_invalid_data_convert_to_csv(splite_field_name_with_json_count, skip_data, invalid_data)
+            if len(field_type["skip_data"]) != 0:
+                skip_data.append(field_type["skip_data"])
+
+        send_mail_skip_data_and_invalid_data_convert_to_csv(
+            splite_field_name_with_json_count, skip_data, invalid_data)
 
         tables_name = get_table_names_in_json_condition(json_format)
         contact_customer_list = table_name_use_suparat_all_data(
@@ -163,35 +164,39 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     contact_customer_inner_list = add_new_field["contact_customer_inner_list"]
     organization_customer_inner_list = add_new_field["organization_customer_inner_list"]
 
-    contact_required_name = False
-    contact_required_line_1 = False
-    for contact in contact_customer_inner_list:
-        if contact["column_name"] == "first_name":
-            contact_required_name = len(contact["value"]) != 0
-        if contact["column_name"] == "line_1":
-            contact_required_line_1 = len(contact["value"]) != 0
+    if which_user in [CONTACT,CONTACT_AND_ORGAZANAIZATION]:
+               
+        contact_required_name = False
+        contact_required_line_1 = False
+        for contact in contact_customer_inner_list:
+            if contact["column_name"] == "first_name":
+                contact_required_name = len(contact["value"]) != 0
+            if contact["column_name"] == "line_1":
+                contact_required_line_1 = len(contact["value"]) != 0
 
-    organization_required_name = False
-    organization_required_line_1 = False
-    for organization in organization_customer_inner_list:
-        if organization["column_name"] == "name":
-            organization_required_name = len(organization["value"]) != 0
-        if organization["column_name"] == "line_1":
-            organization_required_line_1 = len(organization["value"]) != 0
+        if contact_required_name and contact_required_line_1:
+            contact_list = contact_customer_inner_list
+            all_contact = organizing_with_table_name(line_index,
+                                                    contact_customer_inner_list)
+        else:
+            skip_data.update({"contact": contact_customer_inner_list})
 
-    if contact_required_name and contact_required_line_1:
-        contact_list = contact_customer_inner_list
-        all_contact = organizing_with_table_name(line_index,
-                                                 contact_customer_inner_list)
-    else:
-        skip_data.update({"contact": contact_customer_inner_list})
+    if which_user in [ORGAZANAIZATION,CONTACT_AND_ORGAZANAIZATION]:
 
-    if organization_required_name and organization_required_line_1:
-        organization_list = organization_customer_inner_list
-        all_organization = organizing_with_table_name(line_index,
-                                                      organization_customer_inner_list)
-    else:
-        skip_data.update({"organization": organization_customer_inner_list})
+        organization_required_name = False
+        organization_required_line_1 = False
+        for organization in organization_customer_inner_list:
+            if organization["column_name"] == "name":
+                organization_required_name = len(organization["value"]) != 0
+            if organization["column_name"] == "line_1":
+                organization_required_line_1 = len(organization["value"]) != 0
+
+        if organization_required_name and organization_required_line_1:
+            organization_list = organization_customer_inner_list
+            all_organization = organizing_with_table_name(line_index,
+                                                        organization_customer_inner_list)
+        else:
+            skip_data.update({"organization": organization_customer_inner_list})
 
     contaxt = {"contact": all_contact,
                "organization": all_organization,
@@ -298,19 +303,20 @@ def organizing_with_table_name(line_index, field_format_return_dict):
     return responce_list
 
 
-
 # --------------------------------step 2 --------------------------------
 
 
 def send_mail_skip_data_and_invalid_data_convert_to_csv(field_names, skip_data, invalid_data):
     field_names.insert(0, "line Number")
-    send_mail_skip_data = threading.Thread(target=send_skipped_data, args=(field_names, skip_data))
-    send_mail_skip_data.start()
-    send_mail_invalid_data = threading.Thread(target=send_invalid_data, args=(field_names, invalid_data))
-    send_mail_invalid_data.start()
+    if len(skip_data) != 0:
+        send_mail_skip_data = threading.Thread(
+            target=send_skipped_data, args=(field_names, skip_data))
+        send_mail_skip_data.start()
+    if len(invalid_data) != 0:
+        send_mail_invalid_data = threading.Thread(
+            target=send_invalid_data, args=(field_names, invalid_data))
+        send_mail_invalid_data.start()
     return
-
-
 
 
 def send_skipped_data(field_names, skip_data):
@@ -324,17 +330,18 @@ def send_skipped_data(field_names, skip_data):
                     single_line_data[value["column_number"]+1] = value["value"]
                 line_number = value["line_number"]
         single_line_data[0] = line_number
-        all_data_list.append(single_line_data)   
+        all_data_list.append(single_line_data)
+    csv_name = f"skipped_data_"+datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     try:
         df = pd.DataFrame(all_data_list, columns=field_names)
-        df.to_csv('invalid_data_sheets/skipped_data.csv', index=False)
+        df.to_csv(f'invalid_data_sheets/{csv_name}.csv', index=False)
     except Exception as e:
-        print("Error", str(e))   
+        print("Error", str(e))
     send_email(count=10, file_url=os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'invalid_data_sheets', 'skipped_data.csv'), logo_url="", filename="skipped_data.csv")
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="", filename=f"{csv_name}.csv")
 
 
-def send_invalid_data(field_names,invalid_data):
+def send_invalid_data(field_names, invalid_data):
     invalid_data_list = []
     for data in invalid_data:
         single_line_data = [""] * len(field_names)
@@ -345,13 +352,14 @@ def send_invalid_data(field_names,invalid_data):
             line_number = d["line_number"]
         single_line_data[0] = line_number
         invalid_data_list.append(single_line_data)
+    csv_name = f"invalid_data_"+datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     try:
         df = pd.DataFrame(invalid_data_list, columns=field_names)
-        df.to_csv('invalid_data_sheets/invalid_data.csv', index=False)
+        df.to_csv(f'invalid_data_sheets/{csv_name}.csv', index=False)
     except Exception as e:
-        print("Error", str(e)) 
+        print("Error", str(e))
     send_email(count=10, file_url=os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'invalid_data_sheets', 'invalid_data.csv'), logo_url="", filename="invalid_data.csv")
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="", filename=f"{csv_name}.csv")
 
 # --------------------------------step 3  --------------------------------
 
@@ -381,17 +389,19 @@ def bulk_insert_using_bulk_type(TENANT_ID, bulk_insert_id, which_user, contact_c
         contact_customer_group_addresess_list = bulk_insert_function(
             contact_customer_list, TENANT_ID, bulk_insert_id, custemer_type="contact_customer")
 
-        contact = threading.Thread(target=contact_thread, args=(
-            contact_list, contact_customer_group_addresess_list, TENANT_ID))
-        contact.start()
+        if contact_customer_group_addresess_list["phones_and_users_data_import_true_or_false"]:
+            contact = threading.Thread(target=contact_thread, args=(
+                contact_list, contact_customer_group_addresess_list, TENANT_ID))
+            contact.start()
 
     if which_user == ORGAZANAIZATION:
         organization_customer_group_addresess_list = bulk_insert_function(
             organization_customer_list, TENANT_ID, bulk_insert_id, custemer_type="company_customer")
 
-        organization = threading.Thread(target=organization_thread, args=(
-            organization_list, organization_customer_group_addresess_list, TENANT_ID))
-        organization.start()
+        if organization_customer_group_addresess_list["phones_and_users_data_import_true_or_false"]:
+            organization = threading.Thread(target=organization_thread, args=(
+                organization_list, organization_customer_group_addresess_list, TENANT_ID))
+            organization.start()
 
     if which_user == CONTACT_AND_ORGAZANAIZATION:
         contact_customer_group_addresess_list = bulk_insert_function(
@@ -399,18 +409,23 @@ def bulk_insert_using_bulk_type(TENANT_ID, bulk_insert_id, which_user, contact_c
         organization_customer_group_addresess_list = bulk_insert_function(
             organization_customer_list, TENANT_ID, bulk_insert_id, custemer_type="company_customer")
 
-        contact = threading.Thread(target=contact_thread, args=(
-            contact_list, contact_customer_group_addresess_list, TENANT_ID))
-        contact.start()
-        organization = threading.Thread(target=organization_thread, args=(
-            organization_list, organization_customer_group_addresess_list, TENANT_ID))
-        organization.start()
+        if contact_customer_group_addresess_list["phones_and_users_data_import_true_or_false"]:
+            contact = threading.Thread(target=contact_thread, args=(
+                contact_list, contact_customer_group_addresess_list, TENANT_ID))
+            contact.start()
+
+        if organization_customer_group_addresess_list["phones_and_users_data_import_true_or_false"]:
+            organization = threading.Thread(target=organization_thread, args=(
+                organization_list, organization_customer_group_addresess_list, TENANT_ID))
+            organization.start()
     return
 
 
 def bulk_insert_function(bulk_insert_list, TENANT_ID, bulk_insert_id, custemer_type=None):
     retrive_customer_group_data_use_bulk_insert_id = []
     retrive_addresses_data_use_bulk_insert_id = []
+    phones_and_users_data_import_true_or_false = False
+
     for table_name, all_values in bulk_insert_list.items():
         if table_name == "customer_group" or table_name == "addresses":
             get_single_value_for_table_names = all_values[0] if len(
@@ -419,24 +434,28 @@ def bulk_insert_function(bulk_insert_list, TENANT_ID, bulk_insert_id, custemer_t
                 table_name, get_single_value_for_table_names)
             values = get_values(table_name, TENANT_ID,
                                 all_values, bulk_insert_id)
-            if table_name == "customer_group":
-                bulk_insert_dynamic(
-                    table_name, column_names, values, insert=True)
-                retrive_customer_group_data_use_bulk_insert_id = retrive_customer_group_and_addresses_data_use_bulk_insert_id(
-                    table_name, bulk_insert_id, custemer_type, select_customer_group=True)
-                create_avatar_then_dumb_files_db_and_map_customer_group = threading.Thread(
-                    target=create_avatar_then_dumb_files_db_and_map_customer_group_thread, args=(retrive_customer_group_data_use_bulk_insert_id, bulk_insert_id,))
-                create_avatar_then_dumb_files_db_and_map_customer_group.start()
-            if table_name == "addresses":
-                bulk_insert_dynamic(
-                    table_name, column_names, values, insert=True)
-                retrive_addresses_data_use_bulk_insert_id = retrive_customer_group_and_addresses_data_use_bulk_insert_id(
-                    table_name, bulk_insert_id, select_address=True)
+            if len(values) != 0:
+                if table_name == "customer_group":
+                    bulk_insert_dynamic(
+                        table_name, column_names, values, insert=True)
+                    retrive_customer_group_data_use_bulk_insert_id = retrive_customer_group_and_addresses_data_use_bulk_insert_id(
+                        table_name, bulk_insert_id, custemer_type, select_customer_group=True)
+                    create_avatar_then_dumb_files_db_and_map_customer_group = threading.Thread(
+                        target=create_avatar_then_dumb_files_db_and_map_customer_group_thread, args=(retrive_customer_group_data_use_bulk_insert_id, bulk_insert_id,))
+                    create_avatar_then_dumb_files_db_and_map_customer_group.start()
+                if table_name == "addresses":
+                    bulk_insert_dynamic(
+                        table_name, column_names, values, insert=True)
+                    retrive_addresses_data_use_bulk_insert_id = retrive_customer_group_and_addresses_data_use_bulk_insert_id(
+                        table_name, bulk_insert_id, select_address=True)
+                phones_and_users_data_import_true_or_false = True
     responce = {
         "retrive_customer_group": retrive_customer_group_data_use_bulk_insert_id,
-        "retrive_addresses": retrive_addresses_data_use_bulk_insert_id
+        "retrive_addresses": retrive_addresses_data_use_bulk_insert_id,
+        "phones_and_users_data_import_true_or_false": phones_and_users_data_import_true_or_false
     }
     return responce
+
 
 def get_column_names(table_name, bulk_insert_values):
     column_names = []
@@ -538,12 +557,12 @@ def users_and_phones_map_list(sheet_row_ways_contact_or_organization_list, retri
         customer_group_addresses.append(
             tuple(customer_group_pk_and_address_pk))
 
-    error_data_for_customer_group_addresses = []
-    max_length = max(map(len, customer_group_addresses))
-    for index, item in enumerate(customer_group_addresses):
-        if len(item) != max_length:
-            error_data_for_customer_group_addresses.append(item)
-            customer_group_addresses.pop(index)
+    # error_data_for_customer_group_addresses = []
+    # max_length = max(map(len, customer_group_addresses))
+    # for index, item in enumerate(customer_group_addresses):
+    #     if len(item) != max_length:
+    #         error_data_for_customer_group_addresses.append(item)
+    #         customer_group_addresses.pop(index)
 
     bulk_insert_customer_group_addresses(
         customer_group_addresses, id_address, insert=True)
