@@ -89,8 +89,9 @@ def bulk_import_api():
             if len(field_type["skip_data"]) != 0:
                 skip_data.append(field_type["skip_data"])
 
-        send_mail_skip_data_and_invalid_data_convert_to_csv(
-            splite_field_name_with_json_count, skip_data, invalid_data)
+        send_mail = threading.Thread(target = send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
+            splite_field_name_with_json_count, skip_data, invalid_data))
+        send_mail.start()
 
         tables_name = get_table_names_in_json_condition(json_format)
         contact_customer_list = table_name_use_suparat_all_data(
@@ -236,8 +237,12 @@ def add_new_field(user_type, table_name, column_name, value, line_index):
 def finding_which_data(line_index, user_type, table_name, column_name, validation, field_type, value, column_index):
     field_format_dict = {}
     valid = check_validation(validation, field_type, value)
-    field_format_dict.update(
-        {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": value, "valid": valid, "line_number": line_index, "column_number": column_index})
+    if valid:
+        field_format_dict.update(
+            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": value, "valid": valid, "line_number": line_index, "column_number": column_index})
+    else:
+        field_format_dict.update(
+            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": f"{value} not valid {column_name}", "valid": valid, "line_number": line_index, "column_number": column_index})
     return field_format_dict
 
 
