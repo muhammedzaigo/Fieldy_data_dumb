@@ -6,16 +6,15 @@ import bcrypt
 import threading
 import os
 import re
-import pandas as pd
 from utils.query import *
+from dotenv import load_dotenv
+load_dotenv()
 
 UPLOAD_FOLDER = "media"
-SALT = b'$2y$10$/XihfLhBx5RphDLAxfldkOdyEy6seEfWuA1oGGkfNYslabtmYndT'
+SALT = os.getenv('SALT')
 DEFAULT_PASSWORD = b'Fieldy@123'
-FIELDY_AT_123 = "$2y$10$/XihfLhBx5RphDLAxfldkOyPDO4YAv9YaGPtzmN/LvUpUTCkdlA82"
-TENANT_ID = 15
+FIELDY_AT_123 =str(os.getenv('FIELDY_AT_123'))
 MIME = "image/png"
-SECRET_KEY = "f#6=zf!2=n@ed-=6g17&k4e4fl#d4v&l*v6q5_6=8jz1f98v#"
 
 CONTACT = 1
 ORGAZANAIZATION = 2
@@ -49,7 +48,7 @@ def password_hash(password):
 
 
 # (`id_customer_group`,`email`,`name`)
-def create_avatar_then_dumb_files_db_and_map_customer_group_thread(customer_group_id_and_emails: tuple = (), bulk_insert_id: int = 1):
+def create_avatar_then_dumb_files_db_and_map_customer_group_thread(customer_group_id_and_emails: tuple = (), bulk_insert_id: int = 1, TENANT_ID=0):
     files_db_dump_data = []
     files_identifier_list = []
     create_avatar_names = []
@@ -182,7 +181,7 @@ def is_valid_url(url, min=1, max=256):
 def is_valid_phone_number(number, min=6, max=15):
     # pattern = r"^\+?[1-9]\d{%d,%d}$" % (min-1, max-1)
     # return bool(re.match(pattern, number))
-    return  True if len(number) >= min and len(number) <= max else False
+    return True if len(number) >= min and len(number) <= max else False
 
 
 def is_valid_alphanumeric(text, min=1, max=256):
@@ -192,6 +191,7 @@ def is_valid_alphanumeric(text, min=1, max=256):
 
 def is_all_characters(text, min=1, max=256):
     return len(text) <= max
+
 
 def get_table_names_in_json_condition(json_format):
     table_names = []

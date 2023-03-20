@@ -1,37 +1,38 @@
-from utils.json_condition import *
 from utils.utils import *
 from utils.query import *
-
+from dotenv import load_dotenv
+import pandas as pd
 import io
 from flask import *
 import csv
 import datetime
 import threading
-from api.xlsx_to_csv import xlsx_convert_csv
-from api.bulk_insert import bulk_insert
+# from api.xlsx_to_csv import xlsx_convert_csv
+# from api.bulk_insert import bulk_insert
 from flask_mail import Mail, Message
 from template.email import email_template
 
 app = Flask(__name__)
+load_dotenv()
+# app.register_blueprint(xlsx_convert_csv, url_prefix='/api')
+# app.register_blueprint(bulk_insert, url_prefix='/api')
 
-app.secret_key = SECRET_KEY
+app.secret_key = str(os.getenv('SECRET_KEY'))
+
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USERNAME'] = 'muhammed@zaigoinfotech.com'
-app.config['MAIL_PASSWORD'] = 'mlgbykepnxyraolt'
+app.config['MAIL_USERNAME'] = str(os.getenv('MAIL_USERNAME'))
+app.config['MAIL_PASSWORD'] = str(os.getenv('MAIL_PASSWORD'))
 mail = Mail(app)
 
-app.register_blueprint(xlsx_convert_csv, url_prefix='/api')
-app.register_blueprint(bulk_insert, url_prefix='/api')
 
-
-def send_email(count, file_url, logo_url, filename=None):
+def send_email(count, file_url, logo_url, target_email, filename=None):
     with app.app_context():
         try:
-            msg = Message('Feildy Message', sender='muhammed@zaigoinfotech.com',
-                          recipients=['mrahil7510@gmail.com'])
+            msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
+                          recipients=[target_email])
             with app.open_resource(file_url) as csv_file:
                 msg.attach(filename=filename,
                            content_type="text/csv", data=csv_file.read())
@@ -52,6 +53,7 @@ def bulk_import_api():
         file = request.files['file']
         TENANT_ID = request.form.get('tanant_id', None)
         json_format = request.form.get('json_format', None)
+        target_email = request.form.get('target_email', None)
 
         if TENANT_ID == None or json_format == None:
             return make_response(jsonify({'message': 'tanant_id or json_format is required'}), 400)
@@ -89,9 +91,10 @@ def bulk_import_api():
             if len(field_type["skip_data"]) != 0:
                 skip_data.append(field_type["skip_data"])
 
-        send_mail = threading.Thread(target = send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
-            splite_field_name_with_json_count, skip_data, invalid_data))
-        send_mail.start()
+        if target_email:
+            send_mail = threading.Thread(target=send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
+                splite_field_name_with_json_count, skip_data, invalid_data, target_email))
+            send_mail.start()
 
         tables_name = get_table_names_in_json_condition(json_format)
         contact_customer_list = table_name_use_suparat_all_data(
@@ -165,8 +168,8 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     contact_customer_inner_list = add_new_field["contact_customer_inner_list"]
     organization_customer_inner_list = add_new_field["organization_customer_inner_list"]
 
-    if which_user in [CONTACT,CONTACT_AND_ORGAZANAIZATION]:
-               
+    if which_user in [CONTACT, CONTACT_AND_ORGAZANAIZATION]:
+
         contact_required_name = False
         contact_required_line_1 = False
         for contact in contact_customer_inner_list:
@@ -178,11 +181,11 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
         if contact_required_name and contact_required_line_1:
             contact_list = contact_customer_inner_list
             all_contact = organizing_with_table_name(line_index,
-                                                    contact_customer_inner_list)
+                                                     contact_customer_inner_list)
         else:
             skip_data.update({"contact": contact_customer_inner_list})
 
-    if which_user in [ORGAZANAIZATION,CONTACT_AND_ORGAZANAIZATION]:
+    if which_user in [ORGAZANAIZATION, CONTACT_AND_ORGAZANAIZATION]:
 
         organization_required_name = False
         organization_required_line_1 = False
@@ -195,9 +198,10 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
         if organization_required_name and organization_required_line_1:
             organization_list = organization_customer_inner_list
             all_organization = organizing_with_table_name(line_index,
-                                                        organization_customer_inner_list)
+                                                          organization_customer_inner_list)
         else:
-            skip_data.update({"organization": organization_customer_inner_list})
+            skip_data.update(
+                {"organization": organization_customer_inner_list})
 
     contaxt = {"contact": all_contact,
                "organization": all_organization,
@@ -311,20 +315,20 @@ def organizing_with_table_name(line_index, field_format_return_dict):
 # --------------------------------step 2 --------------------------------
 
 
-def send_mail_skip_data_and_invalid_data_convert_to_csv(field_names, skip_data, invalid_data):
+def send_mail_skip_data_and_invalid_data_convert_to_csv(field_names, skip_data, invalid_data, target_email):
     field_names.insert(0, "line Number")
     if len(skip_data) != 0:
         send_mail_skip_data = threading.Thread(
-            target=send_skipped_data, args=(field_names, skip_data))
+            target=send_skipped_data, args=(field_names, skip_data, target_email))
         send_mail_skip_data.start()
     if len(invalid_data) != 0:
         send_mail_invalid_data = threading.Thread(
-            target=send_invalid_data, args=(field_names, invalid_data))
+            target=send_invalid_data, args=(field_names, invalid_data, target_email))
         send_mail_invalid_data.start()
     return
 
 
-def send_skipped_data(field_names, skip_data):
+def send_skipped_data(field_names, skip_data, target_email):
     all_data_list = []
     for data in skip_data:
         single_line_data = [""] * len(field_names)
@@ -343,10 +347,10 @@ def send_skipped_data(field_names, skip_data):
     except Exception as e:
         print("Error", str(e))
     send_email(count=10, file_url=os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="", filename=f"{csv_name}.csv")
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="", target_email=target_email, filename=f"{csv_name}.csv")
 
 
-def send_invalid_data(field_names, invalid_data):
+def send_invalid_data(field_names, invalid_data, target_email):
     invalid_data_list = []
     for data in invalid_data:
         single_line_data = [""] * len(field_names)
@@ -364,7 +368,7 @@ def send_invalid_data(field_names, invalid_data):
     except Exception as e:
         print("Error", str(e))
     send_email(count=10, file_url=os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="", filename=f"{csv_name}.csv")
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="", target_email=target_email, filename=f"{csv_name}.csv")
 
 # --------------------------------step 3  --------------------------------
 
@@ -446,7 +450,7 @@ def bulk_insert_function(bulk_insert_list, TENANT_ID, bulk_insert_id, custemer_t
                     retrive_customer_group_data_use_bulk_insert_id = retrive_customer_group_and_addresses_data_use_bulk_insert_id(
                         table_name, bulk_insert_id, custemer_type, select_customer_group=True)
                     create_avatar_then_dumb_files_db_and_map_customer_group = threading.Thread(
-                        target=create_avatar_then_dumb_files_db_and_map_customer_group_thread, args=(retrive_customer_group_data_use_bulk_insert_id, bulk_insert_id,))
+                        target=create_avatar_then_dumb_files_db_and_map_customer_group_thread, args=(retrive_customer_group_data_use_bulk_insert_id, bulk_insert_id, TENANT_ID))
                     create_avatar_then_dumb_files_db_and_map_customer_group.start()
                 if table_name == "addresses":
                     bulk_insert_dynamic(
