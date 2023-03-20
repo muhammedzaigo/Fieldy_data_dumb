@@ -11,4 +11,4 @@ RUN mkdir -p /app
 COPY . /app
 WORKDIR /app
 EXPOSE 5000
-CMD ["python", "app.py"]
+CMD ["flask", "run"]
