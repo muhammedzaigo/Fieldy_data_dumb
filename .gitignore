@@ -1,4 +1,6 @@
 .vscode
-env
+env/
 test.py
-sheets
+sheets/
+media/
+invalid_data_sheets/
