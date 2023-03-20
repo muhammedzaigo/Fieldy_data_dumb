@@ -1,10 +1,14 @@
 import pymysql
+import os
 
-HOST = 'localhost'
-USER = 'root'
-PORT = 3306
-PASSWORD = '7592978136'
-DATABASE = 'prod_live'
+from dotenv import load_dotenv
+load_dotenv()
+
+HOST = str(os.getenv('HOST'))
+USER = str(os.getenv('USER'))
+PORT = str(os.getenv('PORT'))
+PASSWORD = str(os.getenv('PASSWORD'))
+DATABASE = str(os.getenv('DATABASE'))
 
 def insert_update_delete(qry,val):
     connection=pymysql.connect(host=HOST,user=USER,port=PORT,password=PASSWORD,db=DATABASE)

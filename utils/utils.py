@@ -13,7 +13,7 @@ load_dotenv()
 UPLOAD_FOLDER = "media"
 SALT = os.getenv('SALT')
 DEFAULT_PASSWORD = b'Fieldy@123'
-FIELDY_AT_123 =str(os.getenv('FIELDY_AT_123'))
+FIELDY_AT_123 = str(os.getenv('FIELDY_AT_123'))
 MIME = "image/png"
 
 CONTACT = 1
