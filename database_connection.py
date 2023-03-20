@@ -6,7 +6,7 @@ load_dotenv()
 
 HOST = str(os.getenv('HOST'))
 USER = str(os.getenv('USER'))
-PORT = str(os.getenv('PORT'))
+PORT = os.getenv('PORT')
 PASSWORD = str(os.getenv('PASSWORD'))
 DATABASE = str(os.getenv('DATABASE'))
 
