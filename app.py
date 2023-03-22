@@ -213,22 +213,44 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     return contaxt
 
 
+
 def add_new_field_based_on_user_type(line_index, contact_customer_inner_list, organization_customer_inner_list, which_user):
     if which_user == CONTACT:
-        contact_customer_inner_list.append(add_new_field(
-            "contact", "customer_group", "customer_type", "contact_customer", line_index))
+        contact_customer_inner_list = add_new_field_in_contact(
+            contact_customer_inner_list, line_index)
+
     if which_user == ORGAZANAIZATION:
-        organization_customer_inner_list.append(add_new_field(
-            "organization", "customer_group", "customer_type", "company_customer", line_index))
+        organization_customer_inner_list = add_new_field_in_organization(
+            organization_customer_inner_list, line_index)
+
     if which_user == CONTACT_AND_ORGAZANAIZATION:
-        contact_customer_inner_list.append(add_new_field(
-            "contact", "customer_group", "customer_type", "contact_customer", line_index))
-        organization_customer_inner_list.append(add_new_field(
-            "organization", "customer_group", "customer_type", "company_customer", line_index))
+        contact_customer_inner_list = add_new_field_in_contact(
+            contact_customer_inner_list, line_index)
+        organization_customer_inner_list = add_new_field_in_organization(
+            organization_customer_inner_list, line_index)
+
     return {
         "contact_customer_inner_list": contact_customer_inner_list,
         "organization_customer_inner_list": organization_customer_inner_list
     }
+
+
+def add_new_field_in_contact(contact_customer_inner_list, line_index):
+    contact_customer_inner_list.append(add_new_field(
+        "contact", "customer_group", "customer_type", "contact_customer", line_index))
+
+    contact_customer_inner_list.append(add_new_field(
+        "contact", "customer_group", "type", "customer_company", line_index))
+    return contact_customer_inner_list
+
+
+def add_new_field_in_organization(organization_customer_inner_list, line_index):
+    organization_customer_inner_list.append(add_new_field(
+        "organization", "customer_group", "customer_type", "company_customer", line_index))
+
+    organization_customer_inner_list.append(add_new_field(
+        "organization", "customer_group", "type", "customer_company", line_index))
+    return organization_customer_inner_list
 
 
 def add_new_field(user_type, table_name, column_name, value, line_index):
