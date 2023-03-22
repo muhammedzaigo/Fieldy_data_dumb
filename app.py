@@ -40,7 +40,7 @@ def send_email(count, file_url, logo_url, target_email, filename=None):
             mail.send(msg)
             return 'Email sent!'
         except Exception as e:
-            return str(e)
+            return f" email : {str(e)}"
 
 
 @app.route("/api/bulk_import", methods=['POST'])
