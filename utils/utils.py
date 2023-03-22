@@ -43,7 +43,7 @@ def password_hash(password):
         hashed_password = hashed_password.decode()
     except Exception as e:
         hashed_password = FIELDY_AT_123
-        print(str(e))
+        print(f"password - {str(e)}")
     return hashed_password
 
 
