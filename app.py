@@ -473,7 +473,7 @@ def bulk_insert_function(bulk_insert_list, TENANT_ID, bulk_insert_id, custemer_t
                         table_name, bulk_insert_id, custemer_type, select_customer_group=True)
                     create_avatar_then_dumb_files_db_and_map_customer_group = threading.Thread(
                         target=create_avatar_then_dumb_files_db_and_map_customer_group_thread, args=(retrive_customer_group_data_use_bulk_insert_id, bulk_insert_id, TENANT_ID))
-                    # create_avatar_then_dumb_files_db_and_map_customer_group.start()
+                    create_avatar_then_dumb_files_db_and_map_customer_group.start()
                 if table_name == "addresses":
                     bulk_insert_dynamic(
                         table_name, column_names, values, insert=True)
