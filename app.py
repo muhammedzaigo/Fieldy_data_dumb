@@ -473,7 +473,7 @@ def bulk_insert_function(bulk_insert_list, TENANT_ID, bulk_insert_id, custemer_t
                         table_name, bulk_insert_id, custemer_type, select_customer_group=True)
                     create_avatar_then_dumb_files_db_and_map_customer_group = threading.Thread(
                         target=create_avatar_then_dumb_files_db_and_map_customer_group_thread, args=(retrive_customer_group_data_use_bulk_insert_id, bulk_insert_id, TENANT_ID))
-                    create_avatar_then_dumb_files_db_and_map_customer_group.start()
+                    # create_avatar_then_dumb_files_db_and_map_customer_group.start()
                 if table_name == "addresses":
                     bulk_insert_dynamic(
                         table_name, column_names, values, insert=True)
@@ -492,10 +492,12 @@ def get_column_names(table_name, bulk_insert_values):
     column_names = []
     for column_name in bulk_insert_values:
         column_names.append(column_name['column_name'])
+        
     if table_name == "addresses":
         column_names.append("id_tenant")
     if table_name == "customer_group" or table_name == "phones":
         column_names.append("tenant_id")
+        
     column_names.append("created_at")
     if table_name == "customer_group" or table_name == "addresses":
         column_names.append("bulk_insert_id")
@@ -534,6 +536,7 @@ def users_and_phones_map_list(sheet_row_ways_contact_or_organization_list, retri
         "retrive_customer_group"]
     address_id_and_lines = retrive_db_customer_group_or_address_list["retrive_addresses"]
     id_address = []
+    role_id = retrive_role_id(TENANT_ID,select=True)
     hash_password = password_hash(DEFAULT_PASSWORD)
     for row in sheet_row_ways_contact_or_organization_list:
         first_name = ""
@@ -570,7 +573,7 @@ def users_and_phones_map_list(sheet_row_ways_contact_or_organization_list, retri
                     (phone, customer_group_id_and_email[0], TENANT_ID, datetime.datetime.now()))
                 # map customer_group_pk and first name and last name for users table
                 users_data_and_customer_group.append(
-                    (name, first_name, last_name, email, customer_group_id_and_email[0], hash_password, datetime.datetime.now()))
+                    (name, first_name, last_name, email, customer_group_id_and_email[0],TENANT_ID,role_id, hash_password, datetime.datetime.now()))
 
                 customer_group_pk_and_address_pk.append(
                     customer_group_id_and_email[0])

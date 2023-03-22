@@ -102,7 +102,7 @@ def bulk_insert_users(users_data_and_customer_group,select=False,insert=False):
     users: tuple = ()
     try:
         if insert:
-            qry = "INSERT INTO `users`(`name`,`first_name`,`last_name`,`email`,`id_customer_group`,`password`,`created_at`) VALUES (%s,%s,%s,%s,%s,%s,%s)"
+            qry = "INSERT INTO `users`(`name`,`first_name`,`last_name`,`email`,`id_customer_group`,`tenant_id`,`role_id`,`password`,`created_at`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
             insert_update_delete_many(qry, users_data_and_customer_group)
         if select:
             qry = '''SELECT `email`,`id_customer_group` FROM `users`'''
@@ -110,6 +110,20 @@ def bulk_insert_users(users_data_and_customer_group,select=False,insert=False):
     except Exception as e:
         print(f"users : {str(e)}")
     return users
+
+
+
+
+def retrive_role_id(TENANT_ID,select=False):
+    role = None
+    try:
+        if select:
+            qry = '''SELECT `id` FROM `roles` WHERE `tenant_id` = %s and `name` = %s''' 
+            role = select_one(qry, (TENANT_ID,"customer"))
+            role = role[0]
+    except Exception as e:
+        print(f"role : {str(e)}")
+    return role
 
 
 def bulk_insert_phones(phone_number_and_customer_group,select=False,insert=False):
