@@ -6,12 +6,14 @@ import bcrypt
 import threading
 import os
 import re
-from utils.query import *
 from dotenv import load_dotenv
+from utils.query import bulk_insert_files, bulk_update_customer_group
+
 load_dotenv()
 
 UPLOAD_FOLDER = "media"
-SALT = os.getenv('SALT')
+# SALT = bytes(str(os.getenv('SALT')),'utf-8')
+SALT = b"$2y$10$/XihfLhBx5RphDLAxfldkOdyEy6seEfWuA1oGGkfNYslabtmYndT"
 DEFAULT_PASSWORD = 'Fieldy@123'
 FIELDY_AT_123 = str(os.getenv('FIELDY_AT_123'))
 MIME = "image/png"
@@ -39,7 +41,7 @@ def random_string(length):
 
 def password_hash(password):
     try:
-        hashed_password = bcrypt.hashpw(password, SALT)
+        hashed_password = bcrypt.hashpw(password.encode(), SALT)
         hashed_password = hashed_password.decode()
     except Exception as e:
         hashed_password = FIELDY_AT_123

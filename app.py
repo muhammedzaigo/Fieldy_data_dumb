@@ -213,7 +213,6 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     return contaxt
 
 
-
 def add_new_field_based_on_user_type(line_index, contact_customer_inner_list, organization_customer_inner_list, which_user):
     if which_user == CONTACT:
         contact_customer_inner_list = add_new_field_in_contact(
@@ -492,12 +491,12 @@ def get_column_names(table_name, bulk_insert_values):
     column_names = []
     for column_name in bulk_insert_values:
         column_names.append(column_name['column_name'])
-        
+
     if table_name == "addresses":
         column_names.append("id_tenant")
     if table_name == "customer_group" or table_name == "phones":
         column_names.append("tenant_id")
-        
+
     column_names.append("created_at")
     if table_name == "customer_group" or table_name == "addresses":
         column_names.append("bulk_insert_id")
@@ -536,7 +535,7 @@ def users_and_phones_map_list(sheet_row_ways_contact_or_organization_list, retri
         "retrive_customer_group"]
     address_id_and_lines = retrive_db_customer_group_or_address_list["retrive_addresses"]
     id_address = []
-    role_id = retrive_role_id(TENANT_ID,select=True)
+    role_id = retrive_role_id(TENANT_ID, select=True)
     hash_password = password_hash(DEFAULT_PASSWORD)
     for row in sheet_row_ways_contact_or_organization_list:
         first_name = ""
@@ -573,7 +572,7 @@ def users_and_phones_map_list(sheet_row_ways_contact_or_organization_list, retri
                     (phone, customer_group_id_and_email[0], TENANT_ID, datetime.datetime.now()))
                 # map customer_group_pk and first name and last name for users table
                 users_data_and_customer_group.append(
-                    (name, first_name, last_name, email, customer_group_id_and_email[0],TENANT_ID,role_id, hash_password, datetime.datetime.now()))
+                    (name, first_name, last_name, email, customer_group_id_and_email[0], TENANT_ID, role_id, hash_password, datetime.datetime.now()))
 
                 customer_group_pk_and_address_pk.append(
                     customer_group_id_and_email[0])
@@ -606,4 +605,4 @@ def users_and_phones_map_list(sheet_row_ways_contact_or_organization_list, retri
 
 
 if __name__ == "__main__":
-    app.run(debug=False,host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0')
