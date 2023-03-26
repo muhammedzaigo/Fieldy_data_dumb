@@ -20,7 +20,6 @@ MIME = "image/png"
 
 CONTACT = 1
 ORGAZANAIZATION = 2
-CONTACT_AND_ORGAZANAIZATION = 3
 
 
 def create_avatar(names, create=False):
@@ -81,87 +80,150 @@ def create_avatar_then_dumb_files_db_and_map_customer_group_thread(customer_grou
         file_identifier = file[1]
 
         for file_items in files_identifier_list:
-            if file_items[0] == file_identifier:  # file_identifier == file_identifier
+            if file_items[0] == file_identifier:
                 update_file_id_custemer_group.append(
-                    (file_items[1], file_id, TENANT_ID, datetime.datetime.now()))  # `id_customer_group_id`,`id_file`
+                    (file_items[1], file_id, TENANT_ID, datetime.datetime.now()))
                 continue
-    bulk_update_customer_with_file = bulk_update_customer_group(
-        update_file_id_custemer_group, insert=True)
-    return
+    bulk_update_customer_group(update_file_id_custemer_group, insert=True)
+    return "File Upload Successfully"
 
 
-def currect_json_map(json_format):
+def currect_json_map_and_which_user_type(json_format):
+    organization = False
+    which_types_imported = CONTACT
+    which_types = []
+    json_format = currect_address_map(json_format)
     for key, value in json_format.items():
-        if value["table_slug"] in ["name", "website", "email", "first_name", "last_name", "job_title"]:
-            value["parent"] = "customer_group"
         if value["table_slug"] == "zipcode":
             value["table_slug"] = "zip_code"
-        if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name"]:
-            value["parent"] = "addresses"
-        if value["table_slug"] in ["number"]:
-            value["parent"] = "phones"
+
+        if value["parent"] == "addresses":
+            if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
+                value["parent"] = "branch_addresses"
+
+        if value["parent"] == "":
+            if value["table_slug"] in ["name", "website", "email", "first_name", "last_name", "job_title", "lead_source"]:
+                value["parent"] = "customer_group"
+
+            if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name"]:
+                value["parent"] = "addresses"
+
+        if value["parent"] == "contacts":
+            value["parent"] = "users"
+
+        if value["entity"] == "organization" and value["table_slug"] == "name":
+            organization = True
+
+        which_types.append(value['entity'])
+
+        add_validation_fields(value, key, json_format)
+
+    if organization:
+        json_format = if_name_in_organization_all_entity_convert_organization(
+            json_format)
+
+    which_types = list(set(which_types))
+    if "contact" not in which_types and len(which_types) != 0:
+        which_types_imported = ORGAZANAIZATION
+    if "contact" in which_types and "organization" in which_types and organization:
+        which_types_imported = ORGAZANAIZATION
+
+    return {"json_format": json_format, "user_type": which_types_imported}
+
+
+def currect_address_map(json_format):
+    address = False
+    branch_address = False
+    for key, value in json_format.items():
+        if value["table_slug"] == "line_1" and value["parent"] == "":
+            address = True
+        if value["table_slug"] == "line_1" and value["parent"] == "addresses":
+            branch_address = True
+
+    for key, value in json_format.items():
+
+        if address and branch_address == False:
+            if value["parent"] == "addresses" and value["table_slug"] in ["line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
+                value["parent"] = ""
+
+        if address == False and branch_address:
+            if value["parent"] == "" and value["table_slug"] in ["line_2", "city", "state", "zip_code", "branch_name"]:
+                value["parent"] = "addresses"
+
     return json_format
 
 
-def which_user_types_imported(json_format):
-    which_types_imported = CONTACT
-    which_types = []
-    for key, values in json_format.items():
-        which_types.append(values['entity'])
-    which_types = list(set(which_types))
-    if len(which_types) != 0 and "contact" not in which_types:
-        which_types_imported = ORGAZANAIZATION
-    if "contact" in which_types and "organization" in which_types:
-        which_types_imported = CONTACT_AND_ORGAZANAIZATION
-    return which_types_imported
+def add_validation_fields(values, key, json_format):
+    if values["table_slug"] == "line_1":
+        json_format[key].update({"validation": validation(
+            max="255"), "field_type": "all_characters"})
+
+    if values["table_slug"] == "line_2":
+        json_format[key].update({"validation": validation(
+            max="150"), "field_type": "all_characters"})
+
+    if values["table_slug"] == "state":
+        json_format[key].update({"validation": validation(
+            max="255"), "field_type": "all_characters"})
+
+    if values["table_slug"] == "city":
+        json_format[key].update({"validation": validation(
+            max="255"), "field_type": "all_characters"})
+
+    if values["table_slug"] == "zip_code":
+        json_format[key].update({"validation": validation(
+            max="18"), "field_type": "all_characters"})
+
+    if values["table_slug"] == "email":
+        json_format[key].update({"validation": validation(
+            min="64", max="255"), "field_type": "email"})
+
+    if values["table_slug"] == "number":
+        json_format[key].update({"validation": validation(
+            min="6", max="15"), "field_type": "number"})
+
+    if values["table_slug"] == "phone":
+        json_format[key].update({"validation": validation(
+            min="6", max="15"), "field_type": "number"})
+
+    if values["table_slug"] == "lead_source":
+        json_format[key].update({"validation": validation(
+            max="256"), "field_type": "alpha_numeric"})
+    if values["table_slug"] == "branch_name":
+        json_format[key].update({"validation": validation(
+            max="256"), "field_type": "all_characters"})
+
+    if values["table_slug"] == "first_name":
+        json_format[key].update({"validation": validation(
+            max="256"), "field_type": "alpha_numeric"})
+
+    if values["table_slug"] == "last_name":
+        json_format[key].update({"validation": validation(
+            max="256",), "field_type": "alpha_numeric"})
+
+    if values["table_slug"] == "job_title":
+        json_format[key].update(
+            {"validation": validation(max="256"), "field_type": "number"})
+
+    if values["table_slug"] == "name":
+        json_format[key].update({"validation": validation(
+            max="256"), "field_type": "alpha_numeric"})
+
+    if values["table_slug"] == "website":
+        json_format[key].update(
+            {"validation": validation(max="512"), "field_type": "website"})
+
+    if values["table_slug"] == "id_country":
+        json_format[key].update({"validation": validation(
+            max="90"), "field_type": "all_characters"})
+
+    return json_format
 
 
-def add_validation_fields(json_format):
-    for key, values in json_format.items():
-        if values["table_slug"] == "line_1":
-            json_format[key].update({"validation": validation(
-                max="255"), "field_type": "all_characters"})
-        if values["table_slug"] == "line_2":
-            json_format[key].update({"validation": validation(
-                max="150"), "field_type": "all_characters"})
-        if values["table_slug"] == "state":
-            json_format[key].update({"validation": validation(
-                max="255"), "field_type": "all_characters"})
-        if values["table_slug"] == "city":
-            json_format[key].update({"validation": validation(
-                max="255"), "field_type": "all_characters"})
-        if values["table_slug"] == "zip_code":
-            json_format[key].update({"validation": validation(
-                max="18"), "field_type": "all_characters"})
-        if values["table_slug"] == "email":
-            json_format[key].update({"validation": validation(
-                min="64", max="255"), "field_type": "email"})
-        if values["table_slug"] == "number":
-            json_format[key].update({"validation": validation(
-                min="6", max="15"), "field_type": "number"})
-        if values["table_slug"] == "lead_source":
-            json_format[key].update({"validation": validation(
-                max="256"), "field_type": "alpha_numeric"})
-        if values["entity"] == "contact":
-            if values["table_slug"] == "first_name":
-                json_format[key].update({"validation": validation(
-                    max="256"), "field_type": "alpha_numeric"})
-            if values["table_slug"] == "last_name":
-                json_format[key].update({"validation": validation(
-                    max="256",), "field_type": "alpha_numeric"})
-            if values["table_slug"] == "job_title":
-                json_format[key].update(
-                    {"validation": validation(max="256"), "field_type": "number"})
-        if values["entity"] == "organization":
-            if values["table_slug"] == "name":
-                json_format[key].update({"validation": validation(
-                    max="256"), "field_type": "alpha_numeric"})
-            if values["table_slug"] == "website":
-                json_format[key].update(
-                    {"validation": validation(max="512"), "field_type": "website"})
-            if values["table_slug"] == "id_country":
-                json_format[key].update({"validation": validation(
-                    max="90"), "field_type": "all_characters"})
+def if_name_in_organization_all_entity_convert_organization(json_format):
+    for key, value in json_format.items():
+        if value["entity"] != "organization":
+            value["entity"] = "organization"
     return json_format
 
 
@@ -201,6 +263,50 @@ def get_table_names_in_json_condition(json_format):
         table_name = json_format[key]['parent']
         table_names.append(table_name)
     table_names = list(set(table_names))
-    if "customer_group" in table_names:
-        table_names.append('users')
+    if "users" not in table_names:
+        if "customer_group" in table_names:
+            table_names.append('users')
     return table_names
+
+
+def get_column_names(table_name, bulk_insert_values):
+    column_names = []
+    for column_name in bulk_insert_values:
+        column_names.append(column_name['column_name'])
+    column_names = add_column_name(table_name, column_names)
+    return column_names
+
+
+def add_column_name(table_name, column_names):
+    if table_name in ["addresses", "branch_addresses"]:
+        column_names.append("id_tenant")
+    if table_name in ["phones", "customer_group"]:
+        column_names.append("tenant_id")
+    column_names.append("created_at")
+    if table_name == "users":
+        column_names.append("created_by")
+    if table_name in ["addresses", "customer_group", "branch_addresses"]:
+        column_names.append("bulk_insert_id")
+    return column_names
+
+
+def get_column_values(table_name, TENANT_ID, bulk_insert_values, bulk_insert_id, created_by):
+    values = []
+    for bulk_insert_value in bulk_insert_values:
+        val = []
+        for items in bulk_insert_value:
+            val.append(items['value'])
+        val = add_column_values(
+            val, table_name, TENANT_ID, bulk_insert_id, created_by)
+        values.append(tuple(val))
+    return values
+
+
+def add_column_values(val, table_name, TENANT_ID, bulk_insert_id, created_by):
+    val.append(TENANT_ID)
+    val.append(datetime.datetime.now())
+    if table_name == "users":
+        val.append(created_by)
+    if table_name in ["addresses", "customer_group", "branch_addresses"]:
+        val.append(bulk_insert_id)
+    return val

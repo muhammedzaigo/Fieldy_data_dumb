@@ -81,15 +81,12 @@ def bulk_insert_addresses(address,bulk_insert_id,select=False,insert=False):
     return address_id_and_lines
 
 
-def bulk_insert_customer_group_addresses(customer_group_addresses,id_address,select=False,delete=False,insert=False):
+def bulk_insert_customer_group_addresses(customer_group_addresses,select=False,insert=False):
     customer_group_addresses_all: tuple = ()
     try:
         if insert:
             qry = "INSERT INTO `customer_group_addresses`(`tenant_id`,`id_customer_group`,`id_address`,`created_at`) VALUES (%s,%s,%s,%s)"
             insert_update_delete_many(qry, customer_group_addresses)
-        if delete:
-            qry = "DELETE FROM `customer_group_addresses` WHERE `id_address` IN (%s) "
-            insert_update_delete_many(qry, id_address)
         if select:
             qry = '''  SELECT * FROM `customer_group_addresses`'''
             customer_group_addresses_all = select_all(qry)
@@ -102,7 +99,7 @@ def bulk_insert_users(users_data_and_customer_group,select=False,insert=False):
     users: tuple = ()
     try:
         if insert:
-            qry = "INSERT INTO `users`(`name`,`first_name`,`last_name`,`email`,`id_customer_group`,`tenant_id`,`role_id`,`password`,`created_at`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+            qry = "INSERT INTO `users`(`name`,`first_name`,`last_name`,`email`,`phone`,`job_title`,`id_customer_group`,`tenant_id`,`role_id`,`created_by`,`password`,`created_at`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
             insert_update_delete_many(qry, users_data_and_customer_group)
         if select:
             qry = '''SELECT `email`,`id_customer_group` FROM `users`'''
