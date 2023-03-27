@@ -54,9 +54,9 @@ def bulk_import_api():
         TENANT_ID = request.form.get('tanant_id', None)
         json_format = request.form.get('json_format', None)
         target_email = request.form.get('target_email', None)
-        created_by = 1
-        if TENANT_ID == None or json_format == None:
-            return make_response(jsonify({'message': 'tanant_id or json_format is required'}), 400)
+        created_by = request.form.get('created_by', None)
+        if TENANT_ID == None or json_format == None or created_by == None:
+            return make_response(jsonify({'message': 'tanant_id, json_format, created_by is required fields'}), 400)
 
         import_sheet = file.read().decode('utf-8')
         reader = csv.DictReader(io.StringIO(import_sheet))

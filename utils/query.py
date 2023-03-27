@@ -2,13 +2,13 @@ from database_connection import *
 import datetime
 
 
-def get_bulk_insert_id(insert=False,select=False):
+def get_bulk_insert_id(insert=False, select=False):
     bulk_insert_id: int = 0
     try:
         if insert:
             qry = '''INSERT INTO `bulk_insert`(`created_at`) VALUES (%s)'''
             val = (datetime.datetime.now())
-            last_row_id = insert_update_delete(qry,val)
+            last_row_id = insert_update_delete(qry, val)
         if select:
             qry = '''SELECT `id` FROM `bulk_insert` ORDER BY id DESC LIMIT 1'''
             last_row_id = select_all(qry)
@@ -18,10 +18,10 @@ def get_bulk_insert_id(insert=False,select=False):
     return bulk_insert_id
 
 
-def single_insert(name, email, TENANT_ID, time,insert=False):
-    return_val : tuple = ()
+def single_insert(name, email, TENANT_ID, time, insert=False):
+    return_val: tuple = ()
     try:
-        if insert :
+        if insert:
             qry = "INSERT INTO `customer_group`(`name`,`email`,`TENANT_ID`,`created_at`) VALUES (%s,%s,%s,%s)"
             val = (name, email, TENANT_ID, time)
             return_val = insert_update_delete(qry, val)
@@ -30,7 +30,7 @@ def single_insert(name, email, TENANT_ID, time,insert=False):
     return return_val
 
 
-def single_delete(email,delete=False):
+def single_delete(email, delete=False):
     try:
         if delete:
             qry = "DELETE FROM `customer_group` WHERE  `email` = %s"
@@ -40,7 +40,7 @@ def single_delete(email,delete=False):
     return "Deleted Successfully"
 
 
-def bulk_delete_custemer_group_and_addresses(emails,lines,delete_custemer_group=False,delete_addresses=False):
+def bulk_delete_custemer_group_and_addresses(emails, lines, delete_custemer_group=False, delete_addresses=False):
     try:
         if delete_custemer_group:
             qry = "DELETE FROM `customer_group` WHERE  `email` IN (%s) "
@@ -52,7 +52,7 @@ def bulk_delete_custemer_group_and_addresses(emails,lines,delete_custemer_group=
         print(f"bulk_delete_custemer_group_and_addresses : {str(e)}")
 
 
-def bulk_insert_custemer_group(customer_group,bulk_insert_id,insert=False,select=False):
+def bulk_insert_custemer_group(customer_group, bulk_insert_id, insert=False, select=False):
     customer_group_id_and_emails: tuple = ()
     try:
         if insert:
@@ -66,7 +66,7 @@ def bulk_insert_custemer_group(customer_group,bulk_insert_id,insert=False,select
     return customer_group_id_and_emails
 
 
-def bulk_insert_addresses(address,bulk_insert_id,select=False,insert=False):
+def bulk_insert_addresses(address, bulk_insert_id, select=False, insert=False):
 
     address_id_and_lines: tuple = ()
     try:
@@ -81,7 +81,7 @@ def bulk_insert_addresses(address,bulk_insert_id,select=False,insert=False):
     return address_id_and_lines
 
 
-def bulk_insert_customer_group_addresses(customer_group_addresses,select=False,insert=False):
+def bulk_insert_customer_group_addresses(customer_group_addresses, select=False, insert=False):
     customer_group_addresses_all: tuple = ()
     try:
         if insert:
@@ -95,7 +95,7 @@ def bulk_insert_customer_group_addresses(customer_group_addresses,select=False,i
     return customer_group_addresses_all
 
 
-def bulk_insert_users(users_data_and_customer_group,select=False,insert=False):
+def bulk_insert_users(users_data_and_customer_group, select=False, insert=False):
     users: tuple = ()
     try:
         if insert:
@@ -109,21 +109,19 @@ def bulk_insert_users(users_data_and_customer_group,select=False,insert=False):
     return users
 
 
-
-
-def retrive_role_id(TENANT_ID,select=False):
+def retrive_role_id(TENANT_ID, select=False):
     role = None
     try:
         if select:
-            qry = '''SELECT `id` FROM `roles` WHERE `tenant_id` = %s and `name` = %s''' 
-            role = select_one(qry, (TENANT_ID,"customer"))
+            qry = '''SELECT `id` FROM `roles` WHERE `tenant_id` = %s and `name` = %s'''
+            role = select_one(qry, (TENANT_ID, "customer"))
             role = role[0]
     except Exception as e:
         print(f"role : {str(e)}")
     return role
 
 
-def bulk_insert_phones(phone_number_and_customer_group,select=False,insert=False):
+def bulk_insert_phones(phone_number_and_customer_group, select=False, insert=False):
     phones: tuple = ()
     try:
         if insert:
@@ -137,7 +135,7 @@ def bulk_insert_phones(phone_number_and_customer_group,select=False,insert=False
     return phones
 
 
-def bulk_insert_files(files_db_dump_data,bulk_insert_id,insert=False,select=False):
+def bulk_insert_files(files_db_dump_data, bulk_insert_id, insert=False, select=False):
     files_list: tuple = ()
     try:
         if insert:
@@ -151,7 +149,7 @@ def bulk_insert_files(files_db_dump_data,bulk_insert_id,insert=False,select=Fals
     return files_list
 
 
-def bulk_update_customer_group(update_file_id_custemer_group,insert=False):
+def bulk_update_customer_group(update_file_id_custemer_group, insert=False):
     customer_group_id_and_emails: tuple = ()
     try:
         if insert:
@@ -161,7 +159,6 @@ def bulk_update_customer_group(update_file_id_custemer_group,insert=False):
     except Exception as e:
         print(f"update_customer_group : {str(e)}")
     return customer_group_id_and_emails
-
 
 
 def bulk_insert_dynamic(table_name, column_names, values, insert=False):
