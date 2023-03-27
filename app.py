@@ -123,9 +123,6 @@ def bulk_import_api():
 
         data = {
             'message': 'File imported successfully',
-            # "organization_customer_list":organization_customer_list
-     
-
         }
         response = make_response(jsonify(data), 200)
         response.headers["Content-Type"] = "application/json"
@@ -263,6 +260,8 @@ def add_new_field_in_organization(organization_customer_list, line_index):
 def common_fields(customer_list, user_type, line_index):
     customer_list.append(add_new_field(
         user_type, "customer_group", "type", "customer_company", line_index))
+    customer_list.append(add_new_field(
+        user_type, "customer_group", "status", 5, line_index))
     return customer_list
 
 
@@ -502,7 +501,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
     address_id_and_lines = customer_group_addresess_list["retrive_addresses"]
     role_id = retrive_role_id(TENANT_ID, select=True)
     hash_password = password_hash(DEFAULT_PASSWORD)
-
+    status = 5
     for row in row_ways_customer_list:
         customer_first_name = ""
         customer_last_name = ""
@@ -571,13 +570,14 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                 # map customer_group_pk and first name and last name for users table
                 if which_user == ORGAZANAIZATION:
                     if users_first_name != None or users_last_name != None:
+                        users_name = f"{users_first_name} {users_last_name}"
                         users_data_and_customer_group.append(
-                            ("", users_first_name, users_last_name, users_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by, hash_password, datetime.datetime.now()))
+                            (users_name, users_first_name, users_last_name, users_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by,status, hash_password, datetime.datetime.now()))
                     users_data_and_customer_group.append(
-                        (customer_name, "", "", customer_email, "", "", customer_group_id_and_email[0], TENANT_ID, role_id, created_by, hash_password, datetime.datetime.now()))
+                        (customer_name, "", "", customer_email, "", "", customer_group_id_and_email[0], TENANT_ID, role_id, created_by,status, hash_password, datetime.datetime.now()))
                 else:
                     users_data_and_customer_group.append(
-                        (customer_name, customer_first_name, customer_last_name, customer_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by, hash_password, datetime.datetime.now()))
+                        (customer_name, customer_first_name, customer_last_name, customer_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by,status, hash_password, datetime.datetime.now()))
                 
                 if addresses_line_1  is not None:
                     customer_group_pk_and_address_pk.append(customer_group_id_and_email[0])
