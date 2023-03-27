@@ -14,19 +14,16 @@ def email_template(count=10, file_url="", logo_url=""):
               <p>Dear Admin,</p>
                 <p>Total number of {count} Skiped data. Please
                  find the report <a href="{file_url}" target="_blank">here</a></p>
-            </div>
-             <div class="footer">
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0">
-
                         <tr>
-                            <td class="content-block powered-by">
-                                Powered by <img width="70px" height="18px" src="{logo_url}"/>
+                          <p>Powered by </p>
+                            <td class="content-block">
+                              <img width="100px" height="36px" src="{logo_url}"/>
                             </td>
                         </tr>
                     </table>
-                </div>
+            </div>
             <!-- Example of invalid for email html/css, will be detected by Mailtrap: -->
-
           </body>
         </html>
             '''.format(count=count,file_url= file_url , logo_url= logo_url)

@@ -36,7 +36,7 @@ def send_email(count, file_url, logo_url, target_email, filename=None):
             with app.open_resource(file_url) as csv_file:
                 msg.attach(filename=filename,
                            content_type="text/csv", data=csv_file.read())
-            msg.html = email_template(count=count)
+            msg.html = email_template(count=count,logo_url=logo_url)
             mail.send(msg)
             return 'Email sent!'
         except Exception as e:
@@ -93,7 +93,6 @@ def bulk_import_api():
                 invalid_data.append(field_type["invalid_data"])
             if len(field_type["skip_data"]) != 0:
                 skip_data.append(field_type["skip_data"])
-            # break
         tables_name = get_table_names_in_json_condition(json_format)
         bulk_insert_id = get_bulk_insert_id(select=True, insert=True)
 
@@ -361,19 +360,21 @@ def split_customer_group_for_user(responce_dict, line_index):
 
 
 def send_mail_skip_data_and_invalid_data_convert_to_csv(field_names, skip_data, invalid_data, target_email):
-    field_names.insert(0, "line Number")
+    field_names.insert(0, "line Number")    
     if len(skip_data) != 0:
+        skip_data_count = len(skip_data)
         send_mail_skip_data = threading.Thread(
-            target=send_skipped_data, args=(field_names, skip_data, target_email))
+            target=send_skipped_data, args=(field_names, skip_data, target_email,skip_data_count))
         send_mail_skip_data.start()
     if len(invalid_data) != 0:
+        invalid_data_count = len(invalid_data)
         send_mail_invalid_data = threading.Thread(
-            target=send_invalid_data, args=(field_names, invalid_data, target_email))
+            target=send_invalid_data, args=(field_names, invalid_data, target_email,invalid_data_count))
         send_mail_invalid_data.start()
     return
 
 
-def send_skipped_data(field_names, skip_data, target_email):
+def send_skipped_data(field_names, skip_data, target_email,skip_data_count):
     all_data_list = []
     for data in skip_data:
         single_line_data = [""] * len(field_names)
@@ -391,11 +392,11 @@ def send_skipped_data(field_names, skip_data, target_email):
         df.to_csv(f'invalid_data_sheets/{csv_name}.csv', index=False)
     except Exception as e:
         print("Error", str(e))
-    send_email(count=10, file_url=os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="", target_email=target_email, filename=f"{csv_name}.csv")
+    send_email(count=skip_data_count, file_url=os.path.join(os.path.abspath(os.path.dirname(
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp", target_email=target_email, filename=f"{csv_name}.csv")
 
 
-def send_invalid_data(field_names, invalid_data, target_email):
+def send_invalid_data(field_names, invalid_data, target_email,invalid_data_count):
     invalid_data_list = []
     for data in invalid_data:
         single_line_data = [""] * len(field_names)
@@ -412,8 +413,8 @@ def send_invalid_data(field_names, invalid_data, target_email):
         df.to_csv(f'invalid_data_sheets/{csv_name}.csv', index=False)
     except Exception as e:
         print("Error", str(e))
-    send_email(count=10, file_url=os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="", target_email=target_email, filename=f"{csv_name}.csv")
+    send_email(count=invalid_data_count, file_url=os.path.join(os.path.abspath(os.path.dirname(
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp", target_email=target_email, filename=f"{csv_name}.csv")
 
 # --------------------------------step 3  --------------------------------
 
