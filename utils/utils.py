@@ -8,6 +8,9 @@ import os
 import re
 from dotenv import load_dotenv
 from utils.query import bulk_insert_files, bulk_update_customer_group
+import pandas as pd
+import io
+import csv
 
 load_dotenv()
 
@@ -254,7 +257,7 @@ def is_valid_alphanumeric(text, min=1, max=256):
 
 
 def is_all_characters(text, min=1, max=256):
-    return len(text) <= max
+    return len(str(text)) <= max
 
 
 def get_table_names_in_json_condition(json_format):
@@ -310,3 +313,38 @@ def add_column_values(val, table_name, TENANT_ID, bulk_insert_id, created_by):
     if table_name in ["addresses", "customer_group", "branch_addresses"]:
         val.append(bulk_insert_id)
     return val
+
+
+def remove_duplicates_in_sheet(sheet):
+    # sheet = csv.DictReader(io.StringIO(sheet))
+    # rows = []
+    # for row in sheet:
+    #     rows.append(row)
+    # df = pd.DataFrame(rows)
+    # df.drop_duplicates(inplace=True)
+    # reader = df.to_dict(orient='records')
+    # df = pd.read_csv(io.StringIO(sheet))
+    # df.columns = map(str.lower, df.columns)
+    
+    # # duplicates = df[df.duplicated(subset=['email'], keep=False)].sort_values('email')
+    # # duplicates.drop_duplicates(subset=['email'], keep='first', inplace=True)
+    
+    # df.drop_duplicates(subset=df.columns.difference(['email']), inplace=True)
+    # df.drop_duplicates(subset=['email'], keep='first', inplace=True)
+    # reader = df.to_dict(orient='records')
+    # # removed_rows = duplicates.to_dict(orient='records')
+    # fieldnames = list(reader[0].keys())
+    df = pd.read_csv(io.StringIO(sheet))
+    df.columns = map(str.lower, df.columns)
+    # drop duplicate rows
+    cleaned_data = df.drop_duplicates(subset=df.columns.difference(['email']), keep='first')
+    cleaned_data.drop_duplicates(subset=['email'], keep='first', inplace=True)
+    # get removed data
+    removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
+    # convert cleaned data to a dictionary
+    cleaned_data_dict = cleaned_data.to_dict(orient='records')
+    fieldnames = list(cleaned_data_dict[0].keys())
+    # convert removed data to a dictionary
+    removed_data_dict = removed_data.to_dict(orient='index')
+    context = {"cleaned_data": cleaned_data_dict, "fieldnames": fieldnames,"removed_rows":removed_data_dict}
+    return context

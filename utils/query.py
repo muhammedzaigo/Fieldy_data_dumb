@@ -188,3 +188,17 @@ def retrive_customer_group_and_addresses_data_use_bulk_insert_id(table_name, bul
     except Exception as e:
         print(f"{table_name} : {str(e)}")
     return customer_group_id_and_emails
+
+
+def get_bulk_retrive_using_tenant_id(TENANT_ID,retrive=True):
+    retrive_customer_data_using_tenant_id = []
+    try:
+        if retrive:
+            qry = '''SELECT `customer_group`.*,`users`.*,`phones`.* FROM `customer_group`
+            JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group` JOIN `phones` ON `phones`.`phoneable_id`=`customer_group`.`id_customer_group`
+            WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `phones`.`tenant_id` = %s'''
+            val = (TENANT_ID,TENANT_ID,TENANT_ID)
+            retrive_customer_data_using_tenant_id = select_filter(qry, val)
+    except Exception as e:
+        print(f"get_bulk_retrive_using_tenant_id : {str(e)}")
+    return retrive_customer_data_using_tenant_id
