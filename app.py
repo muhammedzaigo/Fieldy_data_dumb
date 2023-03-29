@@ -253,7 +253,7 @@ def is_not_skip_data(customer_list, name, address, retrive_customer_data, organi
     required_line_1 = False
     skip = False
     user = ["","","","","","",""]
-    
+    organization_user = False
     if organization:
         for customer in customer_list:
             if customer["column_name"] == name and customer["table_name"] == "customer_group":
@@ -266,7 +266,7 @@ def is_not_skip_data(customer_list, name, address, retrive_customer_data, organi
             for retrive in retrive_customer_data:
                 organization_name = False
                 organization_first_name = False
-                organization_name = ""
+                organization_full_name = ""
                 for customer in customer_list:
                     if customer["column_name"] == "name":
                         if retrive[1] == customer["value"]:  # retrive[1] name
@@ -276,14 +276,15 @@ def is_not_skip_data(customer_list, name, address, retrive_customer_data, organi
                         if organization_name:
                             if retrive[27] != customer["value"]:  # retrive[27] first_name
                                 organization_first_name = True
+                                organization_user = True        
                                 user[1]= customer["value"]
                                 user[6] = retrive[0]
-                                organization_name = customer["value"]
+                                organization_full_name = customer["value"]
                     if organization_first_name:
                         if customer["column_name"] == "last_name" and customer["table_name"] == "users":  # retrive[28] last_name
                                     user[2] = customer["value"]                                    
-                                    organization_name = organization_name+" "+customer["value"]
-                                    user[0] = organization_name
+                                    organization_full_name = organization_full_name+" "+customer["value"]
+                                    user[0] = organization_full_name
                         if customer["column_name"] == "email" and customer["table_name"] == "users": 
                                 user[3] = customer["value"]
                         if customer["column_name"] == "phone" and customer["table_name"] == "users": 
@@ -292,7 +293,6 @@ def is_not_skip_data(customer_list, name, address, retrive_customer_data, organi
                                 user[5] = customer["value"]
                 if skip:
                     break
-    
     else:
         for customer in customer_list:
             if customer["column_name"] == name and customer["table_name"] == "customer_group":
@@ -336,7 +336,7 @@ def is_not_skip_data(customer_list, name, address, retrive_customer_data, organi
         return_value =  True
     if return_value and skip:
         return_value =  False
-        if organization_first_name:
+        if organization_user:
             context.update({"user":user})
     context.update({"not_skip": return_value})
     return context

@@ -15,10 +15,12 @@ def email_template(count=10, file_url="", logo_url=""):
                 <p>Total number of {count} Skiped data. Please
                  find the report <a href="{file_url}" target="_blank">here</a></p>
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0">
-                        <tr>
+                       <tr>
                           <p>Powered by </p>
                             <td class="content-block">
+                            <div style="padding:10px">
                               <img width="100px" height="36px" src="{logo_url}"/>
+                              </div>
                             </td>
                         </tr>
                     </table>
@@ -51,7 +53,9 @@ def error_template(message="", traceback="", logo_url=""):
                         <tr>
                           <p>Powered by </p>
                             <td class="content-block">
+                            <div style="padding:10px">
                               <img width="100px" height="36px" src="{logo_url}"/>
+                              </div>
                             </td>
                         </tr>
                     </table>
