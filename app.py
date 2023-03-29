@@ -50,6 +50,8 @@ def send_error_thread(message, traceback, logo_url):
     def send_error_email(message, traceback, logo_url):
         with app.app_context():
             try:
+                if not ERROR_TARGET_EMAIL:
+                    ERROR_TARGET_EMAIL = "muhammed@zaigoinfotech.com"
                 msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
                               recipients=[ERROR_TARGET_EMAIL])
                 msg.html = error_template(
