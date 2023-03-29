@@ -11,6 +11,8 @@ from utils.query import bulk_insert_files, bulk_update_customer_group
 import pandas as pd
 import io
 import csv
+import traceback
+import json
 
 load_dotenv()
 
@@ -53,42 +55,51 @@ def password_hash(password):
 
 # (`id_customer_group`,`email`,`name`)
 def create_avatar_then_dumb_files_db_and_map_customer_group_thread(customer_group_id_and_emails: tuple = (), bulk_insert_id: int = 1, TENANT_ID=0):
-    files_db_dump_data = []
-    files_identifier_list = []
-    create_avatar_names = []
+    try:
+        files_db_dump_data = []
+        files_identifier_list = []
+        create_avatar_names = []
 
-    for index, fields in enumerate(customer_group_id_and_emails, 1):
-        name = f"{fields[2]}_{index}"
-        file_name = f"{name}__{TENANT_ID}_{bulk_insert_id}_" + \
-            datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        file_name_with_ext = f"{file_name}.png"
+        for index, fields in enumerate(customer_group_id_and_emails, 1):
+            name = f"{fields[2]}_{index}"
+            file_name = f"{name}__{TENANT_ID}_{bulk_insert_id}_" + \
+                datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_name_with_ext = f"{file_name}.png"
 
-        create_avatar_names.append((name, file_name_with_ext))
-        files_db_dump_data.append((TENANT_ID, MIME, file_name_with_ext,
-                                  file_name_with_ext, datetime.datetime.now(), bulk_insert_id))
-        # file_identifier and customer_group_id
-        files_identifier_list.append((file_name_with_ext, fields[0]))
+            create_avatar_names.append((name, file_name_with_ext))
+            files_db_dump_data.append((TENANT_ID, MIME, file_name_with_ext,
+                                    file_name_with_ext, datetime.datetime.now(), bulk_insert_id))
+            # file_identifier and customer_group_id
+            files_identifier_list.append((file_name_with_ext, fields[0]))
 
-    create_avatar_thread = threading.Thread(
-        target=create_avatar, args=(create_avatar_names, True,))
-    create_avatar_thread.start()
+        create_avatar_thread = threading.Thread(
+            target=create_avatar, args=(create_avatar_names, True,))
+        create_avatar_thread.start()
 
-    bulk_insert_files_list = bulk_insert_files(
-        files_db_dump_data, bulk_insert_id, insert=True, select=True)
+        bulk_insert_files_list = bulk_insert_files(
+            files_db_dump_data, bulk_insert_id, insert=True, select=True)
 
-    update_file_id_custemer_group = []
+        update_file_id_custemer_group = []
 
-    for file in bulk_insert_files_list:
-        file_id = file[0]
-        file_identifier = file[1]
+        for file in bulk_insert_files_list:
+            file_id = file[0]
+            file_identifier = file[1]
 
-        for file_items in files_identifier_list:
-            if file_items[0] == file_identifier:
-                update_file_id_custemer_group.append(
-                    (file_items[1], file_id, TENANT_ID, datetime.datetime.now()))
-                continue
-    bulk_update_customer_group(update_file_id_custemer_group, insert=True)
-    return "File Upload Successfully"
+            for file_items in files_identifier_list:
+                if file_items[0] == file_identifier:
+                    update_file_id_custemer_group.append(
+                        (file_items[1], file_id, TENANT_ID, datetime.datetime.now()))
+                    continue
+        bulk_update_customer_group(update_file_id_custemer_group, insert=True)
+        return "File Upload Successfully"
+    except Exception as e:
+        response = {
+                "error": {
+                    "message": str(e),
+                    "traceback": traceback.format_exc()
+                }
+            }
+        print(json.dumps(response))
 
 
 def currect_json_map_and_which_user_type(json_format):
