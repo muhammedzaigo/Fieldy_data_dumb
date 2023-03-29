@@ -13,8 +13,10 @@ from flask_mail import Mail, Message
 from template.email import email_template, error_template
 import chardet
 import traceback
+from flask_cors import CORS
 
 app = Flask(__name__, instance_relative_config=True)
+CORS(app)
 load_dotenv()
 
 app.secret_key = str(os.getenv('SECRET_KEY'))
@@ -130,6 +132,7 @@ def bulk_import_api():
                 contact_customer_list = table_name_use_suparat_all_data(
                     contact_customer_list, tables_name)
                 context.update({"custemer_type": "contact_customer"})
+                
                 bulk_insert_using_bulk_type(
                     context, contact_customer_list, row_ways_contact_list)
             if which_user == ORGAZANAIZATION:
@@ -146,7 +149,6 @@ def bulk_import_api():
                 send_mail.start()
             response = {
                 'message': 'File imported successfully',
-                "skip_data": skip_data
             }
             response = make_response(jsonify(response), 200)
             response.headers["Content-Type"] = "application/json"
@@ -575,20 +577,20 @@ def all_table_names_convert_dict_of_list(tables_names):
 
 
 def bulk_insert_using_bulk_type(context, customer_list=[], row_ways_customer_list=[]):
-    TENANT_ID = context["TENANT_ID"]
-    bulk_insert_id = context["bulk_insert_id"]
-    created_by = context["created_by"]
-    custemer_type = context["custemer_type"]
-
     customer_group_addresess_list = bulk_insert_function(
-        customer_list, TENANT_ID, bulk_insert_id, created_by, custemer_type)
+        customer_list,context)
     thread = threading.Thread(target=users_and_phones_and_customer_group_addresess_mapping, args=(
         row_ways_customer_list, customer_group_addresess_list,context))
     thread.start()
     return "Successfully"
 
 
-def bulk_insert_function(bulk_insert_list, TENANT_ID, bulk_insert_id, created_by, custemer_type=None):
+def bulk_insert_function(bulk_insert_list,context):
+    TENANT_ID = context["TENANT_ID"]
+    bulk_insert_id = context["bulk_insert_id"]
+    created_by = context["created_by"]
+    custemer_type = context["custemer_type"]
+    
     retrive_customer_group_data_use_bulk_insert_id = []
     retrive_addresses_data_use_bulk_insert_id = []
 
@@ -633,7 +635,6 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
         TENANT_ID = context["TENANT_ID"]
         created_by = context["created_by"]
         which_user = context["which_user"]
-        same_organization_diffrent_user = context["same_organization_diffrent_user"]
         
         customer_group_addresses = []
         phone_number_and_customer_group = []
@@ -751,13 +752,17 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                     customer_group_addresses.append(
                         (customer_group_pk_and_address_pk_branch_address))
 
-        for i in same_organization_diffrent_user:
-            i.append(TENANT_ID)
-            i.append(role_id)
-            i.append(created_by)
-            i.append(hash_password)
-            i.append(datetime.datetime.now())
-            users_data_and_customer_group.append(i)
+        if which_user == ORGAZANAIZATION:
+            same_organization_diffrent_user = context["same_organization_diffrent_user"]
+            if  len(same_organization_diffrent_user) != 0:
+                for i in same_organization_diffrent_user:
+                    i.append(TENANT_ID)
+                    i.append(role_id)
+                    i.append(created_by)
+                    i.append(status)
+                    i.append(hash_password)
+                    i.append(datetime.datetime.now())
+                    users_data_and_customer_group.append(i)
             
         if len(customer_group_addresses) != 0:
             bulk_insert_customer_group_addresses(
