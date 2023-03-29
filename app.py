@@ -71,12 +71,12 @@ def bulk_import_api():
             if 'file' not in request.files:
                 return make_response(jsonify({'message': 'No file uploaded'}), 400)
             file = request.files['file']
-            TENANT_ID = request.form.get('tanant_id', None)
+            TENANT_ID = request.form.get('tenant_id', None)
             json_format = request.form.get('json_format', None)
             target_email = request.form.get('target_email', None)
             created_by = request.form.get('created_by', None)
             if TENANT_ID == None or json_format == None or created_by == None:
-                return make_response(jsonify({'message': 'tanant_id, json_format, created_by is required fields'}), 400)
+                return make_response(jsonify({'message': 'tenant_id, json_format, created_by is required fields'}), 400)
             import_sheet = file.read()
             file_encoding = chardet.detect(import_sheet)['encoding']
             import_sheet = import_sheet.decode(file_encoding)
