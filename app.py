@@ -101,7 +101,7 @@ def bulk_import_api():
             row_ways_organization_list = []
             invalid_data = []
             skip_data = []
-            same_organization_diffrent_user=[]
+            same_organization_diffrent_user = []
             for line_index, line in enumerate(cleaned_data, 1):
                 field_type = divide_to_field_type_with_json_format(
                     line_index, line, splite_field_name_with_json_count, json_format, which_user, retrive_customer_data)
@@ -121,7 +121,8 @@ def bulk_import_api():
                 if len(field_type["skip_data"]) != 0:
                     skip_data.append(field_type["skip_data"])
                 if field_type["same_organization_diffrent_user"]:
-                    same_organization_diffrent_user.append(field_type["same_organization_diffrent_user"])
+                    same_organization_diffrent_user.append(
+                        field_type["same_organization_diffrent_user"])
             tables_name = get_table_names_in_json_condition(json_format)
             bulk_insert_id = get_bulk_insert_id(select=True, insert=True)
             context = {
@@ -134,15 +135,16 @@ def bulk_import_api():
                 contact_customer_list = table_name_use_suparat_all_data(
                     contact_customer_list, tables_name)
                 context.update({"custemer_type": "contact_customer"})
-                
+
                 bulk_insert_using_bulk_type(
                     context, contact_customer_list, row_ways_contact_list)
             if which_user == ORGAZANAIZATION:
                 organization_customer_list = table_name_use_suparat_all_data(
                     organization_customer_list, tables_name)
                 context.update({"custemer_type": "company_customer"})
-                context.update({"same_organization_diffrent_user": same_organization_diffrent_user})
-            
+                context.update(
+                    {"same_organization_diffrent_user": same_organization_diffrent_user})
+
                 bulk_insert_using_bulk_type(
                     context, organization_customer_list, row_ways_organization_list)
             if target_email:
@@ -180,7 +182,7 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     invalid_data = []
     skip_data = {}
     same_organization_diffrent_user = None
-    
+
     json_format_keys = json_format.keys()
     for column_index, key in enumerate(json_format_keys):
         user_type = json_format[key]['entity']
@@ -220,20 +222,23 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     contact_customer_list = add_new_field["contact_customer_list"]
     organization_customer_list = add_new_field["organization_customer_list"]
     if which_user == CONTACT:
-        skip = is_skip_data(contact_customer_list,retrive_customer_data)
+        skip = is_skip_data(contact_customer_list, retrive_customer_data)
         if skip["skip"]:
             skip_data.update({"contact": contact_customer_list})
         else:
-            organized_contact_customer_list = organizing_with_table_name(line_index, contact_customer_list)
+            organized_contact_customer_list = organizing_with_table_name(
+                line_index, contact_customer_list)
     if which_user == ORGAZANAIZATION:
-        skip = is_skip_data(organization_customer_list, retrive_customer_data, organization=True)
+        skip = is_skip_data(organization_customer_list,
+                            retrive_customer_data, organization=True)
         if skip["skip"]:
             skip_data.update({"organization": organization_customer_list})
             if "same_organization_name_diffrent_user" in skip.keys():
                 same_organization_diffrent_user = skip["same_organization_name_diffrent_user"]
         else:
-            organized_organization_customer_list = organizing_with_table_name(line_index, organization_customer_list)
-        
+            organized_organization_customer_list = organizing_with_table_name(
+                line_index, organization_customer_list)
+
     contaxt = {"contact": organized_contact_customer_list,
                "organization": organized_organization_customer_list,
                "row_ways_contact_list": contact_customer_list,
@@ -248,28 +253,30 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
 def is_skip_data(customer_list, retrive_customer_data, organization=False):
     context = {}
     if organization:
-        is_skip_organization = skip_organization(customer_list, retrive_customer_data)
+        is_skip_organization = skip_organization(
+            customer_list, retrive_customer_data)
         skip = is_skip_organization["skip"]
         if "same_organization_name_diffrent_user" in is_skip_organization.keys():
-            context.update({"same_organization_name_diffrent_user":is_skip_organization["same_organization_name_diffrent_user"]})
-        context.update({"skip":skip})
+            context.update(
+                {"same_organization_name_diffrent_user": is_skip_organization["same_organization_name_diffrent_user"]})
+        context.update({"skip": skip})
     else:
         skip = skip_contact(customer_list, retrive_customer_data)
-        context.update({"skip":skip})
+        context.update({"skip": skip})
     return context
-    
+
 
 def skip_organization(customer_list, retrive_customer_data):
-    same_organization_name_diffrent_user = ["","","","","","",""]
+    same_organization_name_diffrent_user = ["", "", "", "", "", "", ""]
     organization_user = False
     skip = False
     name = False
     line_1 = False
     for customer in customer_list:
         if customer["column_name"] == "name" and customer["table_name"] == "customer_group":
-            name = len(str(customer["value"])) != 0 
+            name = len(str(customer["value"])) != 0
         if customer["column_name"] == "line_1":
-            line_1 =  len(str(customer["value"])) != 0
+            line_1 = len(str(customer["value"])) != 0
         if name and line_1:
             break
     if not name or not line_1:
@@ -288,31 +295,35 @@ def skip_organization(customer_list, retrive_customer_data):
                     if organization_name:
                         if retrive[27] != customer["value"]:  # retrive[27] first_name
                             organization_first_name = True
-                            organization_user = True        
-                            same_organization_name_diffrent_user[1]= customer["value"]
+                            organization_user = True
+                            same_organization_name_diffrent_user[1] = customer["value"]
                             same_organization_name_diffrent_user[6] = retrive[0]
                             organization_full_name = customer["value"]
                 if organization_first_name:
-                    if customer["column_name"] == "last_name" and customer["table_name"] == "users":  # retrive[28] last_name
-                                same_organization_name_diffrent_user[2] = customer["value"]                                    
-                                organization_full_name = organization_full_name+" "+customer["value"]
-                                same_organization_name_diffrent_user[0] = organization_full_name
-                    if customer["column_name"] == "email" and customer["table_name"] == "users": 
-                            same_organization_name_diffrent_user[3] = customer["value"]
-                    if customer["column_name"] == "phone" and customer["table_name"] == "users": 
-                            same_organization_name_diffrent_user[4] = customer["value"]
-                    if customer["column_name"] == "job_title" and customer["table_name"] == "users": 
-                            same_organization_name_diffrent_user[5] = customer["value"]
+                    # retrive[28] last_name
+                    if customer["column_name"] == "last_name" and customer["table_name"] == "users":
+                        same_organization_name_diffrent_user[2] = customer["value"]
+                        organization_full_name = organization_full_name + \
+                            " "+customer["value"]
+                        same_organization_name_diffrent_user[0] = organization_full_name
+                    if customer["column_name"] == "email" and customer["table_name"] == "users":
+                        same_organization_name_diffrent_user[3] = customer["value"]
+                    if customer["column_name"] == "phone" and customer["table_name"] == "users":
+                        same_organization_name_diffrent_user[4] = customer["value"]
+                    if customer["column_name"] == "job_title" and customer["table_name"] == "users":
+                        same_organization_name_diffrent_user[5] = customer["value"]
             if skip:
                 break
     context = {}
     return_value = False
     if skip:
-        return_value =  True
+        return_value = True
         if organization_user:
-            context.update({"same_organization_name_diffrent_user":same_organization_name_diffrent_user})
+            context.update(
+                {"same_organization_name_diffrent_user": same_organization_name_diffrent_user})
     context.update({"skip": return_value})
     return context
+
 
 def skip_contact(customer_list, retrive_customer_data):
     skip = False
@@ -343,35 +354,34 @@ def skip_contact(customer_list, retrive_customer_data):
                 if customer["column_name"] == "last_name":
                     if first_name:
                         if retrive[28] == customer["value"]:  # retrive[28] last_name
-                            last_name= True
+                            last_name = True
                 if customer["column_name"] == "email":
-                    if first_name: 
+                    if first_name:
                         if retrive[2] == customer["value"]:  # retrive[2] email
                             email = True
                 else:
-                    not_email= True
+                    not_email = True
                 if customer["column_name"] == "number":
                     if email:
                         if retrive[65] == customer["value"]:  # retrive[65] phone number
                             number = True
                 else:
                     not_phone = True
-                    
+
             if first_name and last_name and email and number:
                 skip = True
                 break
-            if first_name and last_name and email and not_phone :
+            if first_name and last_name and email and not_phone:
                 skip = True
                 break
-            if first_name and last_name and number and not_email :
+            if first_name and last_name and number and not_email:
                 skip = True
                 break
             if not_email and not_phone:
                 if first_name and last_name:
-                    skip = True   
-                    break           
+                    skip = True
+                    break
     return skip
-
 
 
 def add_new_field_based_on_user_type(line_index, contact_customer_list, organization_customer_list, which_user):
@@ -609,19 +619,19 @@ def all_table_names_convert_dict_of_list(tables_names):
 
 def bulk_insert_using_bulk_type(context, customer_list=[], row_ways_customer_list=[]):
     customer_group_addresess_list = bulk_insert_function(
-        customer_list,context)
+        customer_list, context)
     thread = threading.Thread(target=users_and_phones_and_customer_group_addresess_mapping, args=(
-        row_ways_customer_list, customer_group_addresess_list,context))
+        row_ways_customer_list, customer_group_addresess_list, context))
     thread.start()
     return "Successfully"
 
 
-def bulk_insert_function(bulk_insert_list,context):
+def bulk_insert_function(bulk_insert_list, context):
     TENANT_ID = context["TENANT_ID"]
     bulk_insert_id = context["bulk_insert_id"]
     created_by = context["created_by"]
     custemer_type = context["custemer_type"]
-    
+
     retrive_customer_group_data_use_bulk_insert_id = []
     retrive_addresses_data_use_bulk_insert_id = []
 
@@ -661,12 +671,12 @@ def bulk_insert_function(bulk_insert_list,context):
     return responce
 
 
-def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list, customer_group_addresess_list,context):
+def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list, customer_group_addresess_list, context):
     try:
         TENANT_ID = context["TENANT_ID"]
         created_by = context["created_by"]
         which_user = context["which_user"]
-        
+
         customer_group_addresses = []
         phone_number_and_customer_group = []
         users_data_and_customer_group = []
@@ -736,7 +746,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                     if customer_email == customer_group_id_and_email[1] and customer_name == customer_group_id_and_email[2]:
                         # map customer_group_pk and phone number for phones table
                         if phone:
-                            if len(str(phone)) != 0 :
+                            if len(str(phone)) != 0:
                                 phone_number_and_customer_group.append(
                                     (phone, customer_group_id_and_email[0], TENANT_ID, datetime.datetime.now()))
                         # map customer_group_pk and first name and last name for users table
@@ -795,7 +805,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                     i.append(hash_password)
                     i.append(datetime.datetime.now())
                     users_data_and_customer_group.append(i)
-            
+
         if len(customer_group_addresses) != 0:
             bulk_insert_customer_group_addresses(
                 customer_group_addresses, insert=True)

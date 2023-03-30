@@ -32,7 +32,7 @@ def create_avatar(names, create=False):
         if not os.path.exists(UPLOAD_FOLDER):
             os.mkdir(UPLOAD_FOLDER)
         for name in names:
-            try :
+            try:
                 avinit.get_png_avatar(
                     name[0], output_file=f'{UPLOAD_FOLDER}/{name[1]}')
             except:
@@ -71,7 +71,7 @@ def create_avatar_then_dumb_files_db_and_map_customer_group_thread(customer_grou
 
             create_avatar_names.append((name, file_name_with_ext))
             files_db_dump_data.append((TENANT_ID, MIME, file_name_with_ext,
-                                    file_name_with_ext, datetime.datetime.now(), bulk_insert_id))
+                                       file_name_with_ext, datetime.datetime.now(), bulk_insert_id))
             # file_identifier and customer_group_id
             files_identifier_list.append((file_name_with_ext, fields[0]))
 
@@ -97,11 +97,11 @@ def create_avatar_then_dumb_files_db_and_map_customer_group_thread(customer_grou
         return "File Upload Successfully"
     except Exception as e:
         response = {
-                "error": {
-                    "message": str(e),
-                    "traceback": traceback.format_exc()
-                }
+            "error": {
+                "message": str(e),
+                "traceback": traceback.format_exc()
             }
+        }
         print(json.dumps(response))
 
 
@@ -330,35 +330,28 @@ def add_column_values(val, table_name, TENANT_ID, bulk_insert_id, created_by):
 
 
 def remove_duplicates_in_sheet(sheet):
-    # sheet = csv.DictReader(io.StringIO(sheet))
-    # rows = []
-    # for row in sheet:
-    #     rows.append(row)
-    # df = pd.DataFrame(rows)
-    # df.drop_duplicates(inplace=True)
-    # reader = df.to_dict(orient='records')
-    # df = pd.read_csv(io.StringIO(sheet))
-    # df.columns = map(str.lower, df.columns)
-    
-    # # duplicates = df[df.duplicated(subset=['email'], keep=False)].sort_values('email')
-    # # duplicates.drop_duplicates(subset=['email'], keep='first', inplace=True)
-    
-    # df.drop_duplicates(subset=df.columns.difference(['email']), inplace=True)
-    # df.drop_duplicates(subset=['email'], keep='first', inplace=True)
-    # reader = df.to_dict(orient='records')
-    # # removed_rows = duplicates.to_dict(orient='records')
-    # fieldnames = list(reader[0].keys())
     df = pd.read_csv(io.StringIO(sheet))
     df.columns = map(str.lower, df.columns)
-    # drop duplicate rows
-    cleaned_data = df.drop_duplicates(subset=df.columns.difference(['email']), keep='first')
-    cleaned_data.drop_duplicates(subset=['email'], keep='first', inplace=True)
+    # check if email column exists and is not empty
+    if 'email' in df.columns and not df['email'].isnull().all():
+        # # drop duplicate rows based on email column
+        # cleaned_data = df.drop_duplicates(subset=['email'], keep='first')
+        cleaned_data = df.drop_duplicates(
+            subset=df.columns.difference(['email']), keep='first')
+        cleaned_data.drop_duplicates(
+            subset=['email'], keep='first', inplace=True)
+    else:
+        # drop duplicate rows
+        cleaned_data = df.drop_duplicates(keep='first')
     # get removed data
     removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
+    # drop rows with all NaN values
+    removed_data = removed_data.dropna(how='all')
     # convert cleaned data to a dictionary
     cleaned_data_dict = cleaned_data.to_dict(orient='records')
     fieldnames = list(cleaned_data_dict[0].keys())
     # convert removed data to a dictionary
     removed_data_dict = removed_data.to_dict(orient='index')
-    context = {"cleaned_data": cleaned_data_dict, "fieldnames": fieldnames,"removed_rows":removed_data_dict}
+    context = {"cleaned_data": cleaned_data_dict,
+               "fieldnames": fieldnames, "removed_rows": removed_data_dict}
     return context
