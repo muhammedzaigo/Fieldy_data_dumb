@@ -250,29 +250,54 @@ def validation(min: str = "", max: str = ""):
 
 
 def is_valid_email(email, min, max):
+    response ={}
     pattern = r"^[a-zA-Z0-9._%+\-]{1,64}@[a-zA-Z0-9.\-]{1,255}\.[a-zA-Z]{2,}$"
-    return bool(re.match(pattern, email))
+    if re.match(pattern, email):
+        response.update({"valid": True})
+    else:
+        response.update({"valid": False, "message": "Invalid email address"})
+    return response
 
 
 def is_valid_url(url, min=1, max=256):
+    response ={}
     pattern = r"^(?:(?:https?|ftp):\/\/)?(?:www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/.*)?$"
-    return bool(re.match(pattern, url)) and len(url) <= max
-
+    if re.match(pattern, url) and len(url) <= max:
+        response.update({"valid": True})
+    else:
+        response.update({"valid": False, "message": f"Invalid url or your provide greater than {max} characters"})
+    return response
 
 def is_valid_phone_number(number, min=6, max=15):
     # pattern = r"^\+?[1-9]\d{%d,%d}$" % (min-1, max-1)
     # return bool(re.match(pattern, number))
-    return True if len(number) >= min and len(number) <= max else False
-
+    # return True if len(number) >= min and len(number) <= max else False
+    response ={}
+    if  len(number) >= min and len(number) <= max:
+        response.update({"valid": True})
+    else:
+        response.update({"valid": False, "message": f"Invalid phone number or phone number must be minimum {min} and maximam {max} characters"})
+    return response
 
 def is_valid_alphanumeric(text, min=1, max=256):
+    # pattern = r"[a-zA-Z0-9]+"
+    # return bool(re.match(pattern, text)) and len(text) <= max
+    response ={}
     pattern = r"[a-zA-Z0-9]+"
-    return bool(re.match(pattern, text)) and len(text) <= max
-
+    if  re.match(pattern, text) and len(text) <= max:
+        response.update({"valid": True})
+    else:
+        response.update({"valid": False, "message": f"Invalid format or your provide greater than {max} characters"})
+    return response
 
 def is_all_characters(text, min=1, max=256):
-    return len(str(text)) <= max
-
+    # return len(str(text)) <= max
+    response ={}
+    if  len(str(text)) <= max:
+        response.update({"valid": True})
+    else:
+        response.update({"valid": False, "message": f"Invalid format or your provide greater than {max} characters"})
+    return response
 
 def get_table_names_in_json_condition(json_format):
     table_names = []

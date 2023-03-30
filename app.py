@@ -477,17 +477,18 @@ def add_new_field(user_type, table_name, column_name, value, line_index):
 def finding_which_data(line_index, user_type, table_name, column_name, validation, field_type, value, column_index):
     field_format_dict = {}
     valid = check_validation(validation, field_type, value)
-    if valid:
+    if valid["valid"]:
         field_format_dict.update(
             {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": value, "valid": valid, "line_number": line_index, "column_number": column_index})
     else:
+        message = valid["message"]
         field_format_dict.update(
-            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": f"{value} not valid {column_name}", "valid": valid, "line_number": line_index, "column_number": column_index})
+            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": f"{value} - {message} ", "valid": valid, "line_number": line_index, "column_number": column_index})
     return field_format_dict
 
 
 def check_validation(validation, field_type, value):
-    valid = False
+    valid = {"valid":False,"message":""}
     min = int(validation["min"]) if len(validation["min"]) != 0 else 1
     max = int(validation["max"]) if len(validation["max"]) != 0 else 256
     value = "" if pd.isna(value) else value
