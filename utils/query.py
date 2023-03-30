@@ -1,13 +1,20 @@
 from database_connection import *
 import datetime
 
-
-def get_bulk_insert_id(insert=False, select=False):
+def get_bulk_insert_id(context,insert=False, select=False):
+    created_by = context["created_by"]
+    which_user = context["which_user"]
+    filename = context["filename"]
+    if which_user == 2:
+        entity = "organization"
+    else:
+        entity = "contact"
+        
     bulk_insert_id: int = 0
     try:
         if insert:
-            qry = '''INSERT INTO `bulk_insert`(`created_at`) VALUES (%s)'''
-            val = (datetime.datetime.now())
+            qry = '''INSERT INTO `bulk_insert`(`created_at`,`original_file_name`,`created_by`,`entity`) VALUES (%s,%s,%s,%s)'''
+            val = (datetime.datetime.now(),filename,created_by,entity)
             last_row_id = insert_update_delete(qry, val)
         if select:
             qry = '''SELECT `id` FROM `bulk_insert` ORDER BY id DESC LIMIT 1'''

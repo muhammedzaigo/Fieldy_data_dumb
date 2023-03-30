@@ -101,6 +101,7 @@ def bulk_import_api():
                 "TENANT_ID": TENANT_ID,
                 "which_user": which_user,
                 "created_by": created_by,
+                "filename": file.filename
             }
             organizationed_and_skip_sheet_data = organizing_all_sheets_using_json_format(
                 context, cleaned_data, splite_field_name_with_json_count, json_format, duplicate_data, target_email)
@@ -175,7 +176,7 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, splite_field_
                 field_type["same_organization_diffrent_user"])
 
     tables_name = get_table_names_in_json_condition(json_format)
-    bulk_insert_id = get_bulk_insert_id(select=True, insert=True)
+    bulk_insert_id = get_bulk_insert_id(context,select=True, insert=True)
     context.update({'bulk_insert_id': bulk_insert_id})
 
     if context["which_user"] == CONTACT:
