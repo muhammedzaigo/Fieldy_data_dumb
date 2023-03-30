@@ -329,29 +329,66 @@ def add_column_values(val, table_name, TENANT_ID, bulk_insert_id, created_by):
     return val
 
 
-def remove_duplicates_in_sheet(sheet):
-    df = pd.read_csv(io.StringIO(sheet))
+def remove_duplicates_in_sheet(sheet, which_user):
+    if which_user == ORGAZANAIZATION:
+        context = organization_remove_duplicates_in_sheet(sheet)
+    else:
+        context = contact_remove_duplicates_in_sheet(sheet)
+    return context
+
+
+def contact_remove_duplicates_in_sheet(read_sheet):
+    df = pd.read_csv(io.StringIO(read_sheet))
     df.columns = map(str.lower, df.columns)
-    # check if email column exists and is not empty
     if 'email' in df.columns and not df['email'].isnull().all():
-        # # drop duplicate rows based on email column
-        # cleaned_data = df.drop_duplicates(subset=['email'], keep='first')
         cleaned_data = df.drop_duplicates(
             subset=df.columns.difference(['email']), keep='first')
         cleaned_data.drop_duplicates(
             subset=['email'], keep='first', inplace=True)
     else:
-        # drop duplicate rows
         cleaned_data = df.drop_duplicates(keep='first')
-    # get removed data
     removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
-    # drop rows with all NaN values
     removed_data = removed_data.dropna(how='all')
-    # convert cleaned data to a dictionary
     cleaned_data_dict = cleaned_data.to_dict(orient='records')
     fieldnames = list(cleaned_data_dict[0].keys())
-    # convert removed data to a dictionary
     removed_data_dict = removed_data.to_dict(orient='index')
     context = {"cleaned_data": cleaned_data_dict,
                "fieldnames": fieldnames, "removed_rows": removed_data_dict}
     return context
+
+
+def organization_remove_duplicates_in_sheet(read_sheet):
+    df = pd.read_csv(io.StringIO(read_sheet))
+    df.columns = map(str.lower, df.columns)
+    if 'email' in df.columns and not df['email'].isnull().all():
+        cleaned_data = df.drop_duplicates(
+            subset=df.columns.difference(['email']), keep='first')
+        cleaned_data.drop_duplicates(
+            subset=['email'], keep='first', inplace=True)
+        removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
+        removed_data = removed_data.dropna(how='all')
+        dupicate_name = organization_dupicate_name(df, cleaned_data)
+        cleaned_data = dupicate_name["cleaned_data"]
+        remove_dupicate_name = dupicate_name["name_removed_data"]
+    else:
+        cleaned_data = df.drop_duplicates(keep='first')
+        removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
+        removed_data = removed_data.dropna(how='all')
+        dupicate_name = organization_dupicate_name(df, cleaned_data)
+        cleaned_data = dupicate_name["cleaned_data"]
+        remove_dupicate_name = dupicate_name["name_removed_data"]
+
+    cleaned_data_dict = cleaned_data.to_dict(orient='records')
+    removed_data_dict = removed_data.to_dict(orient='index')
+    remove_dupicate_name_dict = remove_dupicate_name.to_dict(orient='records')
+    fieldnames = list(cleaned_data_dict[0].keys())
+    context = {"cleaned_data": cleaned_data_dict,
+               "fieldnames": fieldnames, "removed_rows": removed_data_dict, "remove_dupicate_name_dict": remove_dupicate_name_dict}
+    return context
+
+
+def organization_dupicate_name(df, cleaned_data):
+    cleaned_data = df.drop_duplicates(
+        subset=['organization name'], keep='first')
+    name_removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
+    return {"cleaned_data": cleaned_data, "name_removed_data": name_removed_data}

@@ -190,7 +190,8 @@ def retrive_customer_group_and_addresses_data_use_bulk_insert_id(table_name, bul
     return customer_group_id_and_emails
 
 
-def get_bulk_retrive_using_tenant_id(TENANT_ID, json_format):
+def get_bulk_retrive_using_tenant_id(context, json_format):
+    TENANT_ID = context["TENANT_ID"]
     retrive_customer_data_using_tenant_id = []
     retrive_include_phone = False
     for key, value in json_format.items():
@@ -202,6 +203,9 @@ def get_bulk_retrive_using_tenant_id(TENANT_ID, json_format):
             JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group` JOIN `phones` ON `phones`.`phoneable_id`=`customer_group`.`id_customer_group`
             WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `phones`.`tenant_id` = %s'''
             val = (TENANT_ID, TENANT_ID, TENANT_ID)
+            if "dupicate_name_in_csv" in context.keys():
+                qry = '''SELECT `customer_group`.* FROM `customer_group`WHERE `customer_group`.`tenant_id` = %s '''
+                val = (TENANT_ID)
         else:
             qry = '''SELECT `customer_group`.*,`users`.* FROM `customer_group`
             JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group`

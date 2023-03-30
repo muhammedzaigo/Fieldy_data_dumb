@@ -82,77 +82,45 @@ def bulk_import_api():
             import_sheet = file.read()
             file_encoding = chardet.detect(import_sheet)['encoding']
             import_sheet = import_sheet.decode(file_encoding)
-            remove_duplicates_sheet = remove_duplicates_in_sheet(import_sheet)
-            cleaned_data = remove_duplicates_sheet["cleaned_data"]
-            duplicate_data = remove_duplicates_sheet["removed_rows"]
             json_format = json.loads(json_format)
             currect_json_map_and_which_user_type_check = currect_json_map_and_which_user_type(
                 json_format)
             json_format = currect_json_map_and_which_user_type_check["json_format"]
             which_user = currect_json_map_and_which_user_type_check["user_type"]
+
+            remove_duplicates_sheet = remove_duplicates_in_sheet(
+                import_sheet, which_user)
+            cleaned_data = remove_duplicates_sheet["cleaned_data"]
+            duplicate_data = remove_duplicates_sheet["removed_rows"]
+
             json_count = len(json_format.keys())
             field_names = remove_duplicates_sheet["fieldnames"]
             splite_field_name_with_json_count = field_names[0:json_count]
-            retrive_customer_data = get_bulk_retrive_using_tenant_id(
-                TENANT_ID, json_format)
-            contact_customer_list = []
-            organization_customer_list = []
-            row_ways_contact_list = []
-            row_ways_organization_list = []
-            invalid_data = []
-            skip_data = []
-            same_organization_diffrent_user = []
-            for line_index, line in enumerate(cleaned_data, 1):
-                field_type = divide_to_field_type_with_json_format(
-                    line_index, line, splite_field_name_with_json_count, json_format, which_user, retrive_customer_data)
-                if len(field_type["contact"]) != 0:
-                    contact_customer_list.append(field_type["contact"])
-                if len(field_type["organization"]) != 0:
-                    organization_customer_list.append(
-                        field_type["organization"])
-                if len(field_type["row_ways_contact_list"]) != 0:
-                    row_ways_contact_list.append(
-                        field_type["row_ways_contact_list"])
-                if len(field_type["row_ways_organization_list"]) != 0:
-                    row_ways_organization_list.append(
-                        field_type["row_ways_organization_list"])
-                if len(field_type["invalid_data"]) != 0:
-                    invalid_data.append(field_type["invalid_data"])
-                if len(field_type["skip_data"]) != 0:
-                    skip_data.append(field_type["skip_data"])
-                if field_type["same_organization_diffrent_user"]:
-                    same_organization_diffrent_user.append(
-                        field_type["same_organization_diffrent_user"])
-            tables_name = get_table_names_in_json_condition(json_format)
-            bulk_insert_id = get_bulk_insert_id(select=True, insert=True)
+            
             context = {
                 "TENANT_ID": TENANT_ID,
-                "bulk_insert_id": bulk_insert_id,
                 "which_user": which_user,
                 "created_by": created_by,
+                "target_email": target_email
             }
-            if which_user == CONTACT:
-                contact_customer_list = table_name_use_suparat_all_data(
-                    contact_customer_list, tables_name)
-                context.update({"custemer_type": "contact_customer"})
-
-                bulk_insert_using_bulk_type(
-                    context, contact_customer_list, row_ways_contact_list)
-            if which_user == ORGAZANAIZATION:
-                organization_customer_list = table_name_use_suparat_all_data(
-                    organization_customer_list, tables_name)
-                context.update({"custemer_type": "company_customer"})
-                context.update(
-                    {"same_organization_diffrent_user": same_organization_diffrent_user})
-
-                bulk_insert_using_bulk_type(
-                    context, organization_customer_list, row_ways_organization_list)
-            if target_email:
-                send_mail = threading.Thread(target=send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
-                    splite_field_name_with_json_count, skip_data, invalid_data, duplicate_data, target_email))
-                send_mail.start()
+            organizationed_and_skip_sheet_data = organizing_all_sheets_using_json_format(
+                context, cleaned_data, splite_field_name_with_json_count, json_format, duplicate_data)
+            success_count = organizationed_and_skip_sheet_data["success_count"]
+            skip_data = organizationed_and_skip_sheet_data["skip_data"]
+            
+            if "remove_dupicate_name_dict" in remove_duplicates_sheet.keys():
+                remove_dupicate_name_dict = remove_duplicates_sheet["remove_dupicate_name_dict"]
+                if organizationed_and_skip_sheet_data["success"] :
+                    if len(remove_dupicate_name_dict) != 0:
+                        context.update({"dupicate_name_in_csv":True})
+                        
+                        remove_dupicate_name_dict_data = organizing_all_sheets_using_json_format(
+                        context, remove_dupicate_name_dict, splite_field_name_with_json_count, json_format, [])
+                        success_count = success_count+remove_dupicate_name_dict_data["success_count"]
             response = {
                 'message': 'File imported successfully',
+                "success_count": success_count,
+                "skip_data": skip_data,
             }
             response = make_response(jsonify(response), 200)
             response.headers["Content-Type"] = "application/json"
@@ -174,7 +142,77 @@ def bulk_import_api():
 
 # -------------------------------- step 1 --------------------------------
 
-def divide_to_field_type_with_json_format(line_index, line, field_names, json_format, which_user, retrive_customer_data):
+
+def organizing_all_sheets_using_json_format(context, cleaned_data, splite_field_name_with_json_count,json_format,duplicate_data):
+    retrive_customer_data = get_bulk_retrive_using_tenant_id(context, json_format)
+    contact_customer_list = []
+    organization_customer_list = []
+    row_ways_contact_list = []
+    row_ways_organization_list = []
+    invalid_data = []
+    skip_data = []
+    same_organization_diffrent_user = []
+    for line_index, line in enumerate(cleaned_data, 1):
+        field_type = divide_to_field_type_with_json_format(
+            line_index, line, splite_field_name_with_json_count, json_format, context, retrive_customer_data)
+        if len(field_type["contact"]) != 0:
+            contact_customer_list.append(field_type["contact"])
+        if len(field_type["organization"]) != 0:
+            organization_customer_list.append(
+                field_type["organization"])
+        if len(field_type["row_ways_contact_list"]) != 0:
+            row_ways_contact_list.append(
+                field_type["row_ways_contact_list"])
+        if len(field_type["row_ways_organization_list"]) != 0:
+            row_ways_organization_list.append(
+                field_type["row_ways_organization_list"])
+        if len(field_type["invalid_data"]) != 0:
+            invalid_data.append(field_type["invalid_data"])
+        if len(field_type["skip_data"]) != 0:
+            skip_data.append(field_type["skip_data"])
+        if field_type["same_organization_diffrent_user"]:
+            same_organization_diffrent_user.append(
+                field_type["same_organization_diffrent_user"])
+
+    tables_name = get_table_names_in_json_condition(json_format)
+    bulk_insert_id = get_bulk_insert_id(select=True, insert=True)
+    context.update({'bulk_insert_id': bulk_insert_id})
+    
+    if context["which_user"] == CONTACT:
+        contact_customer_list = table_name_use_suparat_all_data(
+            contact_customer_list, tables_name)
+        context.update({"custemer_type": "contact_customer"})
+        bulk_insert_using_bulk_type(
+            context, contact_customer_list, row_ways_contact_list)
+        success_count = len(contact_customer_list["customer_group"])
+
+    if context["which_user"] == ORGAZANAIZATION:
+        organization_customer_list = table_name_use_suparat_all_data(
+            organization_customer_list, tables_name)
+        context.update({"custemer_type": "company_customer"})
+        context.update(
+            {"same_organization_diffrent_user": same_organization_diffrent_user})
+        bulk_insert_using_bulk_type(
+            context, organization_customer_list, row_ways_organization_list)
+        success_count = len(
+            organization_customer_list["customer_group"])
+
+    if context["target_email"]:
+        send_mail = threading.Thread(target=send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
+            splite_field_name_with_json_count, skip_data, invalid_data, duplicate_data, context["target_email"]))
+        send_mail.start()
+        
+    if "dupicate_name_in_csv" in context.keys():
+        success_count = len(cleaned_data)
+    return {
+        "success_count": success_count,
+        "skip_data": len(skip_data),
+        "success": True
+    }
+
+
+def divide_to_field_type_with_json_format(line_index, line, field_names, json_format, context, retrive_customer_data):
+    
     contact_customer_list = []
     organization_customer_list = []
     organized_organization_customer_list = []
@@ -218,18 +256,20 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
                 organization_customer_list.append(
                     (field_format_return_dict_copy))
     add_new_field = add_new_field_based_on_user_type(
-        line_index, contact_customer_list, organization_customer_list, which_user)
+        line_index, contact_customer_list, organization_customer_list, context["which_user"])
     contact_customer_list = add_new_field["contact_customer_list"]
     organization_customer_list = add_new_field["organization_customer_list"]
-    if which_user == CONTACT:
-        skip = is_skip_data(contact_customer_list, retrive_customer_data)
+    
+    if context["which_user"] == CONTACT:
+        skip = is_skip_data(context,contact_customer_list, retrive_customer_data)
         if skip["skip"]:
             skip_data.update({"contact": contact_customer_list})
         else:
             organized_contact_customer_list = organizing_with_table_name(
                 line_index, contact_customer_list)
-    if which_user == ORGAZANAIZATION:
-        skip = is_skip_data(organization_customer_list,
+            
+    if context["which_user"] == ORGAZANAIZATION:
+        skip = is_skip_data(context,organization_customer_list,
                             retrive_customer_data, organization=True)
         if skip["skip"]:
             skip_data.update({"organization": organization_customer_list})
@@ -250,23 +290,22 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     return contaxt
 
 
-def is_skip_data(customer_list, retrive_customer_data, organization=False):
-    context = {}
+def is_skip_data(context,customer_list, retrive_customer_data, organization=False):
+    context_data = {}
     if organization:
-        is_skip_organization = skip_organization(
+        is_skip_organization = skip_organization(context,
             customer_list, retrive_customer_data)
-        skip = is_skip_organization["skip"]
         if "same_organization_name_diffrent_user" in is_skip_organization.keys():
-            context.update(
+            context_data.update(
                 {"same_organization_name_diffrent_user": is_skip_organization["same_organization_name_diffrent_user"]})
-        context.update({"skip": skip})
+        context_data.update({"skip": is_skip_organization["skip"]})
     else:
         skip = skip_contact(customer_list, retrive_customer_data)
-        context.update({"skip": skip})
-    return context
+        context_data.update({"skip": skip})
+    return context_data
 
 
-def skip_organization(customer_list, retrive_customer_data):
+def skip_organization(context,customer_list, retrive_customer_data):
     same_organization_name_diffrent_user = ["", "", "", "", "", "", ""]
     organization_user = False
     skip = False
@@ -293,12 +332,19 @@ def skip_organization(customer_list, retrive_customer_data):
                         skip = True
                 if customer["column_name"] == "first_name" and customer["table_name"] == "users":
                     if organization_name:
-                        if retrive[27] != customer["value"]:  # retrive[27] first_name
+                        if "dupicate_name_in_csv" in context.keys():
                             organization_first_name = True
                             organization_user = True
                             same_organization_name_diffrent_user[1] = customer["value"]
                             same_organization_name_diffrent_user[6] = retrive[0]
                             organization_full_name = customer["value"]
+                        else:
+                            if retrive[27] != customer["value"]:  # retrive[27] first_name
+                                organization_first_name = True
+                                organization_user = True
+                                same_organization_name_diffrent_user[1] = customer["value"]
+                                same_organization_name_diffrent_user[6] = retrive[0]
+                                organization_full_name = customer["value"]
                 if organization_first_name:
                     # retrive[28] last_name
                     if customer["column_name"] == "last_name" and customer["table_name"] == "users":
@@ -446,6 +492,7 @@ def check_validation(validation, field_type, value):
     valid = False
     min = int(validation["min"]) if len(validation["min"]) != 0 else 1
     max = int(validation["max"]) if len(validation["max"]) != 0 else 256
+    value = "" if pd.isna(value) else value
     value = str(value) if value else ""
     if len(value) != 0:
         if field_type == "alpha_numeric":
@@ -600,6 +647,7 @@ def send_duplicate_data(field_names, duplicate_data, target_email, duplicate_dat
 def table_name_use_suparat_all_data(contact_or_organization_list, tables_names):
     table_name_dict_of_list = all_table_names_convert_dict_of_list(
         tables_names)
+
     for list_of_dict_items in contact_or_organization_list:
         for list_of_dict_item in list_of_dict_items:
             for key, value in list_of_dict_item.items():
@@ -795,17 +843,17 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                         (customer_group_pk_and_address_pk_branch_address))
 
         if which_user == ORGAZANAIZATION:
-            same_organization_diffrent_user = context["same_organization_diffrent_user"]
-            if len(same_organization_diffrent_user) != 0:
-                for i in same_organization_diffrent_user:
-                    i.append(TENANT_ID)
-                    i.append(role_id)
-                    i.append(created_by)
-                    i.append(status)
-                    i.append(hash_password)
-                    i.append(datetime.datetime.now())
-                    users_data_and_customer_group.append(i)
-
+            if "same_organization_diffrent_user" in context.keys():
+                same_organization_diffrent_user = context["same_organization_diffrent_user"]
+                if len(same_organization_diffrent_user) != 0:
+                    for i in same_organization_diffrent_user:
+                        i.append(TENANT_ID)
+                        i.append(role_id)
+                        i.append(created_by)
+                        i.append(status)
+                        i.append(hash_password)
+                        i.append(datetime.datetime.now())
+                        users_data_and_customer_group.append(tuple(i))
         if len(customer_group_addresses) != 0:
             bulk_insert_customer_group_addresses(
                 customer_group_addresses, insert=True)
