@@ -96,27 +96,26 @@ def bulk_import_api():
             json_count = len(json_format.keys())
             field_names = remove_duplicates_sheet["fieldnames"]
             splite_field_name_with_json_count = field_names[0:json_count]
-            
+
             context = {
                 "TENANT_ID": TENANT_ID,
                 "which_user": which_user,
                 "created_by": created_by,
-                "target_email": target_email
             }
             organizationed_and_skip_sheet_data = organizing_all_sheets_using_json_format(
-                context, cleaned_data, splite_field_name_with_json_count, json_format, duplicate_data)
+                context, cleaned_data, splite_field_name_with_json_count, json_format, duplicate_data, target_email)
             success_count = organizationed_and_skip_sheet_data["success_count"]
             skip_data = organizationed_and_skip_sheet_data["skip_data"]
-            
+
             if "remove_dupicate_name_dict" in remove_duplicates_sheet.keys():
                 remove_dupicate_name_dict = remove_duplicates_sheet["remove_dupicate_name_dict"]
-                if organizationed_and_skip_sheet_data["success"] :
+                if organizationed_and_skip_sheet_data["success"]:
                     if len(remove_dupicate_name_dict) != 0:
-                        context.update({"dupicate_name_in_csv":True})
-                        
+                        context.update({"dupicate_name_in_csv": True})
                         remove_dupicate_name_dict_data = organizing_all_sheets_using_json_format(
-                        context, remove_dupicate_name_dict, splite_field_name_with_json_count, json_format, [])
-                        success_count = success_count+remove_dupicate_name_dict_data["success_count"]
+                            context, remove_dupicate_name_dict, splite_field_name_with_json_count, json_format, [], None)
+                        success_count = success_count + \
+                            remove_dupicate_name_dict_data["success_count"]
             response = {
                 'message': 'File imported successfully',
                 "success_count": success_count,
@@ -143,8 +142,9 @@ def bulk_import_api():
 # -------------------------------- step 1 --------------------------------
 
 
-def organizing_all_sheets_using_json_format(context, cleaned_data, splite_field_name_with_json_count,json_format,duplicate_data):
-    retrive_customer_data = get_bulk_retrive_using_tenant_id(context, json_format)
+def organizing_all_sheets_using_json_format(context, cleaned_data, splite_field_name_with_json_count, json_format, duplicate_data, target_email):
+    retrive_customer_data = get_bulk_retrive_using_tenant_id(
+        context, json_format)
     contact_customer_list = []
     organization_customer_list = []
     row_ways_contact_list = []
@@ -177,7 +177,7 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, splite_field_
     tables_name = get_table_names_in_json_condition(json_format)
     bulk_insert_id = get_bulk_insert_id(select=True, insert=True)
     context.update({'bulk_insert_id': bulk_insert_id})
-    
+
     if context["which_user"] == CONTACT:
         contact_customer_list = table_name_use_suparat_all_data(
             contact_customer_list, tables_name)
@@ -197,11 +197,11 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, splite_field_
         success_count = len(
             organization_customer_list["customer_group"])
 
-    if context["target_email"]:
+    if target_email:
         send_mail = threading.Thread(target=send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
-            splite_field_name_with_json_count, skip_data, invalid_data, duplicate_data, context["target_email"]))
+            splite_field_name_with_json_count, skip_data, invalid_data, duplicate_data, target_email))
         send_mail.start()
-        
+
     if "dupicate_name_in_csv" in context.keys():
         success_count = len(cleaned_data)
     return {
@@ -212,7 +212,7 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, splite_field_
 
 
 def divide_to_field_type_with_json_format(line_index, line, field_names, json_format, context, retrive_customer_data):
-    
+
     contact_customer_list = []
     organization_customer_list = []
     organized_organization_customer_list = []
@@ -259,17 +259,16 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
         line_index, contact_customer_list, organization_customer_list, context["which_user"])
     contact_customer_list = add_new_field["contact_customer_list"]
     organization_customer_list = add_new_field["organization_customer_list"]
-    
     if context["which_user"] == CONTACT:
-        skip = is_skip_data(context,contact_customer_list, retrive_customer_data)
+        skip = is_skip_data(context, contact_customer_list,
+                            retrive_customer_data)
         if skip["skip"]:
             skip_data.update({"contact": contact_customer_list})
         else:
             organized_contact_customer_list = organizing_with_table_name(
                 line_index, contact_customer_list)
-            
     if context["which_user"] == ORGAZANAIZATION:
-        skip = is_skip_data(context,organization_customer_list,
+        skip = is_skip_data(context, organization_customer_list,
                             retrive_customer_data, organization=True)
         if skip["skip"]:
             skip_data.update({"organization": organization_customer_list})
@@ -278,7 +277,6 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
         else:
             organized_organization_customer_list = organizing_with_table_name(
                 line_index, organization_customer_list)
-
     contaxt = {"contact": organized_contact_customer_list,
                "organization": organized_organization_customer_list,
                "row_ways_contact_list": contact_customer_list,
@@ -290,11 +288,11 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     return contaxt
 
 
-def is_skip_data(context,customer_list, retrive_customer_data, organization=False):
+def is_skip_data(context, customer_list, retrive_customer_data, organization=False):
     context_data = {}
     if organization:
         is_skip_organization = skip_organization(context,
-            customer_list, retrive_customer_data)
+                                                 customer_list, retrive_customer_data)
         if "same_organization_name_diffrent_user" in is_skip_organization.keys():
             context_data.update(
                 {"same_organization_name_diffrent_user": is_skip_organization["same_organization_name_diffrent_user"]})
@@ -305,7 +303,7 @@ def is_skip_data(context,customer_list, retrive_customer_data, organization=Fals
     return context_data
 
 
-def skip_organization(context,customer_list, retrive_customer_data):
+def skip_organization(context, customer_list, retrive_customer_data):
     same_organization_name_diffrent_user = ["", "", "", "", "", "", ""]
     organization_user = False
     skip = False
@@ -566,21 +564,22 @@ def split_customer_group_for_user(responce_dict, line_index):
 
 
 def send_mail_skip_data_and_invalid_data_convert_to_csv(field_names, skip_data, invalid_data, duplicate_data, target_email):
-    field_names.insert(0, "line Number")
+    field_names_copy = field_names.copy()
+    field_names_copy.insert(0, "line Number")
     if len(skip_data) != 0:
         skip_data_count = len(skip_data)
         send_mail_skip_data = threading.Thread(
-            target=send_skipped_data, args=(field_names, skip_data, target_email, skip_data_count))
+            target=send_skipped_data, args=(field_names_copy, skip_data, target_email, skip_data_count))
         send_mail_skip_data.start()
     if len(invalid_data) != 0:
         invalid_data_count = len(invalid_data)
         send_mail_invalid_data = threading.Thread(
-            target=send_invalid_data, args=(field_names, invalid_data, target_email, invalid_data_count))
+            target=send_invalid_data, args=(field_names_copy, invalid_data, target_email, invalid_data_count))
         send_mail_invalid_data.start()
     if len(duplicate_data) != 0:
         duplicate_data_count = len(duplicate_data)
         send_mail_duplicate_data = threading.Thread(
-            target=send_duplicate_data, args=(field_names, duplicate_data, target_email, duplicate_data_count))
+            target=send_duplicate_data, args=(field_names_copy, duplicate_data, target_email, duplicate_data_count))
         send_mail_duplicate_data.start()
     return
 
