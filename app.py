@@ -220,25 +220,20 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     contact_customer_list = add_new_field["contact_customer_list"]
     organization_customer_list = add_new_field["organization_customer_list"]
     if which_user == CONTACT:
-        skip = is_not_skip_data(
-            contact_customer_list, "first_name", "line_1", retrive_customer_data)
-        if skip["not_skip"]:
-            organized_contact_customer_list = organizing_with_table_name(line_index,
-                                                                         contact_customer_list)
-        else:
+        skip = is_skip_data(contact_customer_list,retrive_customer_data)
+        if skip["skip"]:
             skip_data.update({"contact": contact_customer_list})
-    if which_user == ORGAZANAIZATION:
-        skip = is_not_skip_data(
-            organization_customer_list, "name", "line_1", retrive_customer_data, organization=True)
-        if skip["not_skip"]:
-            organized_organization_customer_list = organizing_with_table_name(line_index,
-                                                                              organization_customer_list)
         else:
-            skip_data.update(
-                {"organization": organization_customer_list})
-            if "user" in skip.keys():
-                same_organization_diffrent_user = skip["user"]
-            
+            organized_contact_customer_list = organizing_with_table_name(line_index, contact_customer_list)
+    if which_user == ORGAZANAIZATION:
+        skip = is_skip_data(organization_customer_list, retrive_customer_data, organization=True)
+        if skip["skip"]:
+            skip_data.update({"organization": organization_customer_list})
+            if "same_organization_name_diffrent_user" in skip.keys():
+                same_organization_diffrent_user = skip["same_organization_name_diffrent_user"]
+        else:
+            organized_organization_customer_list = organizing_with_table_name(line_index, organization_customer_list)
+        
     contaxt = {"contact": organized_contact_customer_list,
                "organization": organized_organization_customer_list,
                "row_ways_contact_list": contact_customer_list,
@@ -250,100 +245,134 @@ def divide_to_field_type_with_json_format(line_index, line, field_names, json_fo
     return contaxt
 
 
-def is_not_skip_data(customer_list, name, address, retrive_customer_data, organization=False):
-    required_name = False
-    required_line_1 = False
-    skip = False
-    user = ["","","","","","",""]
-    organization_user = False
-    if organization:
-        for customer in customer_list:
-            if customer["column_name"] == name and customer["table_name"] == "customer_group":
-                required_name = len(str(customer["value"])) != 0
-            if customer["column_name"] == address:
-                required_line_1 = len(str(customer["value"])) != 0
-            if required_name and required_line_1:
-                break
-        if required_name:  # if name
-            for retrive in retrive_customer_data:
-                organization_name = False
-                organization_first_name = False
-                organization_full_name = ""
-                for customer in customer_list:
-                    if customer["column_name"] == "name":
-                        if retrive[1] == customer["value"]:  # retrive[1] name
-                            organization_name = True
-                            skip = True
-                    if customer["column_name"] == "first_name" and customer["table_name"] == "users":
-                        if organization_name:
-                            if retrive[27] != customer["value"]:  # retrive[27] first_name
-                                organization_first_name = True
-                                organization_user = True        
-                                user[1]= customer["value"]
-                                user[6] = retrive[0]
-                                organization_full_name = customer["value"]
-                    if organization_first_name:
-                        if customer["column_name"] == "last_name" and customer["table_name"] == "users":  # retrive[28] last_name
-                                    user[2] = customer["value"]                                    
-                                    organization_full_name = organization_full_name+" "+customer["value"]
-                                    user[0] = organization_full_name
-                        if customer["column_name"] == "email" and customer["table_name"] == "users": 
-                                user[3] = customer["value"]
-                        if customer["column_name"] == "phone" and customer["table_name"] == "users": 
-                                user[4] = customer["value"]
-                        if customer["column_name"] == "job_title" and customer["table_name"] == "users": 
-                                user[5] = customer["value"]
-                if skip:
-                    break
-    else:
-        for customer in customer_list:
-            if customer["column_name"] == name and customer["table_name"] == "customer_group":
-                required_name = len(str(customer["value"])) != 0
-            if customer["column_name"] == address:
-                required_line_1 = len(str(customer["value"])) != 0
-            if required_name and required_line_1:
-                break
-            
-        if required_name:  # if first_name
-            for retrive in retrive_customer_data:
-                first_name = False
-                last_name = False
-                email = False
-                number = False
-                for customer in customer_list:
-                    if customer["column_name"] == "first_name":
-                        if retrive[27] == customer["value"]:  # retrive[27] first_name
-                            first_name = True
-                    if customer["column_name"] == "last_name":
-                        if first_name:
-                            if retrive[28] == customer["value"]:  # retrive[28] last_name
-                                last_name= True
-                    if customer["column_name"] == "email":
-                        if first_name: 
-                            if retrive[2] == customer["value"]:  # retrive[2] email
-                                email = True
-                    if customer["column_name"] == "number":
-                        if email:
-                            if retrive[65] == customer["value"]:  # retrive[65] phone number
-                                number = True
-                if first_name and last_name and email and number:
-                    skip = True
-                    break
-                if first_name and last_name and email:
-                    skip = True
-                    break
+def is_skip_data(customer_list, retrive_customer_data, organization=False):
     context = {}
-    return_value = False 
-    if required_name and required_line_1:
-        return_value =  True
-    if return_value and skip:
-        return_value =  False
-        if organization_user:
-            context.update({"user":user})
-    context.update({"not_skip": return_value})
+    if organization:
+        is_skip_organization = skip_organization(customer_list, retrive_customer_data)
+        skip = is_skip_organization["skip"]
+        if "same_organization_name_diffrent_user" in is_skip_organization.keys():
+            context.update({"same_organization_name_diffrent_user":is_skip_organization["same_organization_name_diffrent_user"]})
+        context.update({"skip":skip})
+    else:
+        skip = skip_contact(customer_list, retrive_customer_data)
+        context.update({"skip":skip})
     return context
     
-    
+
+def skip_organization(customer_list, retrive_customer_data):
+    same_organization_name_diffrent_user = ["","","","","","",""]
+    organization_user = False
+    skip = False
+    name = False
+    line_1 = False
+    for customer in customer_list:
+        if customer["column_name"] == "name" and customer["table_name"] == "customer_group":
+            name = len(str(customer["value"])) != 0 
+        if customer["column_name"] == "line_1":
+            line_1 =  len(str(customer["value"])) != 0
+        if name and line_1:
+            break
+    if not name or not line_1:
+        skip = True
+    if name and not skip:  # if name
+        for retrive in retrive_customer_data:
+            organization_name = False
+            organization_first_name = False
+            organization_full_name = ""
+            for customer in customer_list:
+                if customer["column_name"] == "name":
+                    if retrive[1] == customer["value"]:  # retrive[1] name
+                        organization_name = True
+                        skip = True
+                if customer["column_name"] == "first_name" and customer["table_name"] == "users":
+                    if organization_name:
+                        if retrive[27] != customer["value"]:  # retrive[27] first_name
+                            organization_first_name = True
+                            organization_user = True        
+                            same_organization_name_diffrent_user[1]= customer["value"]
+                            same_organization_name_diffrent_user[6] = retrive[0]
+                            organization_full_name = customer["value"]
+                if organization_first_name:
+                    if customer["column_name"] == "last_name" and customer["table_name"] == "users":  # retrive[28] last_name
+                                same_organization_name_diffrent_user[2] = customer["value"]                                    
+                                organization_full_name = organization_full_name+" "+customer["value"]
+                                same_organization_name_diffrent_user[0] = organization_full_name
+                    if customer["column_name"] == "email" and customer["table_name"] == "users": 
+                            same_organization_name_diffrent_user[3] = customer["value"]
+                    if customer["column_name"] == "phone" and customer["table_name"] == "users": 
+                            same_organization_name_diffrent_user[4] = customer["value"]
+                    if customer["column_name"] == "job_title" and customer["table_name"] == "users": 
+                            same_organization_name_diffrent_user[5] = customer["value"]
+            if skip:
+                break
+    context = {}
+    return_value = False
+    if skip:
+        return_value =  True
+        if organization_user:
+            context.update({"same_organization_name_diffrent_user":same_organization_name_diffrent_user})
+    context.update({"skip": return_value})
+    return context
+
+def skip_contact(customer_list, retrive_customer_data):
+    skip = False
+    name = False
+    line_1 = False
+    for customer in customer_list:
+        if customer["column_name"] == "first_name" and customer["table_name"] == "customer_group":
+            name = len(str(customer["value"])) != 0
+        if customer["column_name"] == "line_1":
+            line_1 = len(str(customer["value"])) == 0
+        if line_1:
+            if customer["column_name"] in ["line_2", "city", "state", "zip_code", "branch_name"]:
+                skip = True
+    if not name:
+        skip = True
+    if name and not skip:  # if first_name
+        for retrive in retrive_customer_data:
+            first_name = False
+            last_name = False
+            email = False
+            number = False
+            not_email = False
+            not_phone = False
+            for customer in customer_list:
+                if customer["column_name"] == "first_name":
+                    if retrive[27] == customer["value"]:  # retrive[27] first_name
+                        first_name = True
+                if customer["column_name"] == "last_name":
+                    if first_name:
+                        if retrive[28] == customer["value"]:  # retrive[28] last_name
+                            last_name= True
+                if customer["column_name"] == "email":
+                    if first_name: 
+                        if retrive[2] == customer["value"]:  # retrive[2] email
+                            email = True
+                else:
+                    not_email= True
+                if customer["column_name"] == "number":
+                    if email:
+                        if retrive[65] == customer["value"]:  # retrive[65] phone number
+                            number = True
+                else:
+                    not_phone = True
+                    
+            if first_name and last_name and email and number:
+                skip = True
+                break
+            if first_name and last_name and email and not_phone :
+                skip = True
+                break
+            if first_name and last_name and number and not_email :
+                skip = True
+                break
+            if not_email and not_phone:
+                if first_name and last_name:
+                    skip = True   
+                    break           
+    return skip
+
+
 
 def add_new_field_based_on_user_type(line_index, contact_customer_list, organization_customer_list, which_user):
     if which_user == CONTACT:
@@ -706,9 +735,10 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                 for customer_group_id_and_email in customer_group_id_and_emails:
                     if customer_email == customer_group_id_and_email[1] and customer_name == customer_group_id_and_email[2]:
                         # map customer_group_pk and phone number for phones table
-                        if len(str(phone)) != 0:
-                            phone_number_and_customer_group.append(
-                                (phone, customer_group_id_and_email[0], TENANT_ID, datetime.datetime.now()))
+                        if phone:
+                            if len(str(phone)) != 0 :
+                                phone_number_and_customer_group.append(
+                                    (phone, customer_group_id_and_email[0], TENANT_ID, datetime.datetime.now()))
                         # map customer_group_pk and first name and last name for users table
                         if which_user == ORGAZANAIZATION:
                             if users_first_name != None or users_last_name != None:
@@ -756,7 +786,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
         if which_user == ORGAZANAIZATION:
             same_organization_diffrent_user = context["same_organization_diffrent_user"]
-            if  len(same_organization_diffrent_user) != 0:
+            if len(same_organization_diffrent_user) != 0:
                 for i in same_organization_diffrent_user:
                     i.append(TENANT_ID)
                     i.append(role_id)

@@ -32,8 +32,11 @@ def create_avatar(names, create=False):
         if not os.path.exists(UPLOAD_FOLDER):
             os.mkdir(UPLOAD_FOLDER)
         for name in names:
-            avinit.get_png_avatar(
-                name[0], output_file=f'{UPLOAD_FOLDER}/{name[1]}')
+            try :
+                avinit.get_png_avatar(
+                    name[0], output_file=f'{UPLOAD_FOLDER}/{name[1]}')
+            except:
+                continue
         return "avatars created"
 
 

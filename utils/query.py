@@ -203,7 +203,7 @@ def get_bulk_retrive_using_tenant_id(TENANT_ID,json_format):
             WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `phones`.`tenant_id` = %s'''
             val = (TENANT_ID,TENANT_ID,TENANT_ID)
         else:
-            qry = '''SELECT `customer_group`.*,`users`.*,`phones`.* FROM `customer_group`
+            qry = '''SELECT `customer_group`.*,`users`.* FROM `customer_group`
             JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group`
             WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s'''
             val = (TENANT_ID,TENANT_ID)
