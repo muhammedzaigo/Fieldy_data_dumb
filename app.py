@@ -112,11 +112,24 @@ def bulk_import_api():
                 remove_dupicate_name_dict = remove_duplicates_sheet["remove_dupicate_name_dict"]
                 if organizationed_and_skip_sheet_data["success"]:
                     if len(remove_dupicate_name_dict) != 0:
-                        context.update({"dupicate_name_in_csv": True})
-                        remove_dupicate_name_dict_data = organizing_all_sheets_using_json_format(
-                            context, remove_dupicate_name_dict, splite_field_name_with_json_count, json_format, [], None)
-                        success_count = success_count + \
-                            remove_dupicate_name_dict_data["success_count"]
+                        user_first_name = False
+                        for key,value in json_format.items():
+                            if value["parent"] == "users" and value["table_slug"] == "first_name" :
+                                user_first_name =True
+                                break
+                        if user_first_name:
+                            context.update({"dupicate_name_in_csv": True})
+                            remove_dupicate_name_dict_data = organizing_all_sheets_using_json_format(
+                                context, remove_dupicate_name_dict, splite_field_name_with_json_count, json_format, [], None)
+                            success_count = success_count + \
+                                remove_dupicate_name_dict_data["success_count"]
+                        else:
+                            duplicate_data_count = len(remove_dupicate_name_dict)
+                            field_names_copy = splite_field_name_with_json_count.copy()
+                            field_names_copy.insert(0, "line Number")
+                            send_mail_duplicate_data = threading.Thread(
+                                target=send_duplicate_data, args=(field_names_copy, remove_dupicate_name_dict, target_email, duplicate_data_count))
+                            send_mail_duplicate_data.start()
             response = {
                 'message': 'File imported successfully',
                 "success_count": success_count,
@@ -630,10 +643,15 @@ def send_invalid_data(field_names, invalid_data, target_email, invalid_data_coun
 
 
 def send_duplicate_data(field_names, duplicate_data, target_email, duplicate_data_count):
-    for key, datas in duplicate_data.items():
-        datas.update({"line Number": key+2})
-    df = pd.DataFrame.from_dict(
+    try:
+        for key, datas in duplicate_data.items():
+            datas.update({"line Number": key+2})
+        df = pd.DataFrame.from_dict(
         duplicate_data, orient='index', columns=field_names)
+    except:
+        for index,datas in enumerate(duplicate_data):
+            datas.update({"line Number": index+2})     
+        df = pd.DataFrame(duplicate_data, columns=field_names)
     csv_name = f"duplicate_data_"+datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     try:
         df.to_csv(f'invalid_data_sheets/{csv_name}.csv', index=False)
