@@ -80,6 +80,7 @@ def bulk_import_api():
             if TENANT_ID == None or json_format == None or created_by == None:
                 return make_response(jsonify({'message': 'tenant_id, json_format, created_by is required fields'}), 400)
             
+            XLSX= False
             try:
                 import_sheet = file.read()
                 file_encoding = chardet.detect(import_sheet)['encoding']
@@ -96,6 +97,7 @@ def bulk_import_api():
                         encoding_type = chardet.detect(csv_file.read())
                     with open(csv_filename, 'r',encoding=encoding_type['encoding']) as csv_file:
                         import_sheet = csv_file.read()
+                    XLSX = True
                     
             json_format = json.loads(json_format)
             currect_json_map_and_which_user_type_check = currect_json_map_and_which_user_type(
@@ -145,8 +147,9 @@ def bulk_import_api():
                             send_mail_duplicate_data = threading.Thread(
                                 target=send_duplicate_data, args=(field_names_copy, remove_dupicate_name_dict, target_email, duplicate_data_count))
                             send_mail_duplicate_data.start()
-            if os.path.exists(csv_filename):
-                os.remove(csv_filename)
+            if XLSX:
+                if os.path.exists(csv_filename):
+                    os.remove(csv_filename)
             response = {
                 'message': 'File imported successfully',
                 "success_count": success_count,
