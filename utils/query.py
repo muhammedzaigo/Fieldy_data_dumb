@@ -92,7 +92,7 @@ def bulk_insert_customer_group_addresses(customer_group_addresses, select=False,
     customer_group_addresses_all: tuple = ()
     try:
         if insert:
-            qry = "INSERT INTO `customer_group_addresses`(`tenant_id`,`id_customer_group`,`id_address`,`created_at`) VALUES (%s,%s,%s,%s)"
+            qry = "INSERT INTO `customer_group_addresses`(`tenant_id`,`id_customer_group`,`id_address`,`is_primary`,`created_at`) VALUES (%s,%s,%s,%s,%s)"
             insert_update_delete_many(qry, customer_group_addresses)
         if select:
             qry = '''  SELECT * FROM `customer_group_addresses`'''

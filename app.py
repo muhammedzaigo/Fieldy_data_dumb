@@ -843,41 +843,47 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                         else:
                             users_data_and_customer_group.append(
                                 (customer_name, customer_first_name, customer_last_name, customer_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
-
                         if addresses_line_1 is not None:
-                            customer_group_pk_and_address_pk.append(
-                                customer_group_id_and_email[0])
+                            customer_group_pk_and_address_pk.append(customer_group_id_and_email[0])
                         if branch_addresses_line_1 is not None:
-                            customer_group_pk_and_address_pk_branch_address.append(
-                                customer_group_id_and_email[0])
+                            customer_group_pk_and_address_pk_branch_address.append(customer_group_id_and_email[0])
                         break
+                
             if len(address_id_and_lines) != 0:
                 if addresses_line_1 is not None:
+                    is_primary = 1
                     for address_id_and_line in address_id_and_lines:
                         if str(addresses_line_1) == address_id_and_line[1] and str(addresses_line_2) == address_id_and_line[2]:
-                            customer_group_pk_and_address_pk.append(
-                                address_id_and_line[0])
+                            customer_group_pk_and_address_pk.append(address_id_and_line[0])
                             break
-                    customer_group_pk_and_address_pk.insert(0, TENANT_ID)
                     customer_group_pk_and_address_pk.insert(
-                        3, datetime.datetime.now())
-                    customer_group_addresses.append(
-                        (customer_group_pk_and_address_pk))
+                        0, TENANT_ID)
+                    customer_group_pk_and_address_pk.insert(
+                        3, str(is_primary))
+                    customer_group_pk_and_address_pk.insert(
+                        4, datetime.datetime.now())
+                    customer_group_addresses.append((customer_group_pk_and_address_pk))
 
                 if branch_addresses_line_1 is not None:
+                    if addresses_line_1 is not None:
+                        is_primary = 0
+                    else:
+                        is_primary = 1
+                        
                     for address_id_and_line in address_id_and_lines:
                         if str(branch_addresses_line_1) == address_id_and_line[1] and str(branch_addresses_line_2) == address_id_and_line[2]:
-                            customer_group_pk_and_address_pk_branch_address.append(
-                                address_id_and_line[0])
+                            customer_group_pk_and_address_pk_branch_address.append(address_id_and_line[0])
                             break
                     customer_group_pk_and_address_pk_branch_address.insert(
                         0, TENANT_ID)
                     customer_group_pk_and_address_pk_branch_address.insert(
-                        3, datetime.datetime.now())
-                    customer_group_addresses.append(
-                        (customer_group_pk_and_address_pk_branch_address))
-
-        if which_user == ORGAZANAIZATION:
+                        3, str(is_primary))
+                    customer_group_pk_and_address_pk_branch_address.insert(
+                        4, datetime.datetime.now())
+                    customer_group_addresses.append((customer_group_pk_and_address_pk_branch_address))
+                    
+                
+        if which_user == ORGAZANAIZATION:   
             if "same_organization_diffrent_user" in context.keys():
                 retrive_user = bulk_insert_users([],TENANT_ID,select=True)
                 same_organization_diffrent_user = context["same_organization_diffrent_user"]
@@ -904,8 +910,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                             users_data_and_customer_group.append(tuple(i))
                         
         if len(customer_group_addresses) != 0:
-            bulk_insert_customer_group_addresses(
-                customer_group_addresses, insert=True)
+            bulk_insert_customer_group_addresses(customer_group_addresses, insert=True)
         if len(users_data_and_customer_group) != 0:
             bulk_insert_users(users_data_and_customer_group,TENANT_ID, insert=True)
         if len(phone_number_and_customer_group) != 0:
