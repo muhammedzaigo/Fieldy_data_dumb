@@ -386,13 +386,16 @@ def organization_remove_duplicates_in_sheet(read_sheet):
     df = pd.read_csv(io.StringIO(read_sheet))
     df.columns = map(str.lower, df.columns)
     if 'email' in df.columns and not df['email'].isnull().all():
-        cleaned_data = df.drop_duplicates(
-            subset=df.columns.difference(['email']), keep='first')
-        cleaned_data.drop_duplicates(
-            subset=['email'], keep='first', inplace=True)
+        
+        # cleaned_data = df.drop_duplicates(
+        #     subset=df.columns.difference(['email']), keep='first')
+        # cleaned_data.drop_duplicates(
+        #     subset=['email'], keep='first', inplace=True)
+        cleaned_data = df.drop_duplicates(keep='first')
+        
         removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
         removed_data = removed_data.dropna(how='all')
-        
+    
         cleaned_data_dict_for_get_fieldname = cleaned_data.to_dict(orient='records')
         fieldnames = list(cleaned_data_dict_for_get_fieldname[0].keys())
         
