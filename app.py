@@ -79,9 +79,22 @@ def bulk_import_api():
             created_by = request.form.get('created_by', None)
             if TENANT_ID == None or json_format == None or created_by == None:
                 return make_response(jsonify({'message': 'tenant_id, json_format, created_by is required fields'}), 400)
-            import_sheet = file.read()
-            file_encoding = chardet.detect(import_sheet)['encoding']
-            import_sheet = import_sheet.decode(file_encoding)
+            
+            try:
+                import_sheet = file.read()
+                file_encoding = chardet.detect(import_sheet)['encoding']
+                import_sheet = import_sheet.decode(file_encoding)
+            except :
+                df = pd.read_excel(file, sheet_name=None)
+                timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                for sheet_name, sheet_data in df.items():
+                    csv_filename = f"sheets/{sheet_name}_{timestamp}.csv"
+                    sheet_data.to_csv(csv_filename, index=False)
+                    with open(csv_filename, 'rb') as csv_file:
+                        encoding_type = chardet.detect(csv_file.read())
+                    with open(csv_filename, 'r',encoding=encoding_type['encoding']) as csv_file:
+                        import_sheet = csv_file.read()
+                    
             json_format = json.loads(json_format)
             currect_json_map_and_which_user_type_check = currect_json_map_and_which_user_type(
                 json_format)
@@ -130,6 +143,8 @@ def bulk_import_api():
                             send_mail_duplicate_data = threading.Thread(
                                 target=send_duplicate_data, args=(field_names_copy, remove_dupicate_name_dict, target_email, duplicate_data_count))
                             send_mail_duplicate_data.start()
+            if os.path.exists(csv_filename):
+                os.remove(csv_filename)
             response = {
                 'message': 'File imported successfully',
                 "success_count": success_count,
