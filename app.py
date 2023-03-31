@@ -359,15 +359,15 @@ def skip_organization(context, customer_list, retrive_customer_data):
                         same_organization_name_diffrent_user[5] = customer["value"]
             if skip:
                 break
-    context = {}
+    context_val = {}
     return_value = False
     if skip:
         return_value = True
-        if organization_user:
-            context.update(
+        if organization_user:       
+            context_val.update(
                 {"same_organization_name_diffrent_user": same_organization_name_diffrent_user})
-    context.update({"skip": return_value})
-    return context
+    context_val.update({"skip": return_value})
+    return context_val
 
 
 def skip_contact(customer_list, retrive_customer_data):
@@ -845,21 +845,35 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
         if which_user == ORGAZANAIZATION:
             if "same_organization_diffrent_user" in context.keys():
+                retrive_user = bulk_insert_users([],TENANT_ID,select=True)
                 same_organization_diffrent_user = context["same_organization_diffrent_user"]
                 if len(same_organization_diffrent_user) != 0:
+                    first_name = False
+                    last_name = False
+                    id = False
                     for i in same_organization_diffrent_user:
-                        i.append(TENANT_ID)
-                        i.append(role_id)
-                        i.append(created_by)
-                        i.append(status)
-                        i.append(hash_password)
-                        i.append(datetime.datetime.now())
-                        users_data_and_customer_group.append(tuple(i))
+                        if len(retrive_user) != 0:
+                            for user in retrive_user:
+                                if i[1] == user[2]:
+                                    first_name = True
+                                if i[2] == user[3]:
+                                    last_name = True
+                                if i[6] == user[29]:
+                                    id = True
+                        if not first_name and not last_name and not id:     
+                            i.append(TENANT_ID)
+                            i.append(role_id)
+                            i.append(created_by)
+                            i.append(status)
+                            i.append(hash_password)
+                            i.append(datetime.datetime.now())
+                            users_data_and_customer_group.append(tuple(i))
+                        
         if len(customer_group_addresses) != 0:
             bulk_insert_customer_group_addresses(
                 customer_group_addresses, insert=True)
         if len(users_data_and_customer_group) != 0:
-            bulk_insert_users(users_data_and_customer_group, insert=True)
+            bulk_insert_users(users_data_and_customer_group,TENANT_ID, insert=True)
         if len(phone_number_and_customer_group) != 0:
             bulk_insert_phones(phone_number_and_customer_group, insert=True)
         return "Successfully inserted"
@@ -873,6 +887,9 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
         send_error_thread(message=response["error"]["message"], traceback=response["error"]
                           ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
         print(json.dumps(response))
+
+
+
 
 
 if __name__ == "__main__":

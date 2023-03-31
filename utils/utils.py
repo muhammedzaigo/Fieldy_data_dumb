@@ -392,14 +392,22 @@ def organization_remove_duplicates_in_sheet(read_sheet):
             subset=['email'], keep='first', inplace=True)
         removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
         removed_data = removed_data.dropna(how='all')
-        dupicate_name = organization_dupicate_name(df, cleaned_data)
+        
+        cleaned_data_dict_for_get_fieldname = cleaned_data.to_dict(orient='records')
+        fieldnames = list(cleaned_data_dict_for_get_fieldname[0].keys())
+        
+        dupicate_name = organization_dupicate_name(df, cleaned_data,fieldnames)
         cleaned_data = dupicate_name["cleaned_data"]
         remove_dupicate_name = dupicate_name["name_removed_data"]
     else:
         cleaned_data = df.drop_duplicates(keep='first')
         removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
         removed_data = removed_data.dropna(how='all')
-        dupicate_name = organization_dupicate_name(df, cleaned_data)
+        
+        cleaned_data_dict_for_get_fieldname = cleaned_data.to_dict(orient='records')
+        fieldnames = list(cleaned_data_dict_for_get_fieldname[0].keys())
+        
+        dupicate_name = organization_dupicate_name(df, cleaned_data,fieldnames)
         cleaned_data = dupicate_name["cleaned_data"]
         remove_dupicate_name = dupicate_name["name_removed_data"]
 
@@ -412,8 +420,8 @@ def organization_remove_duplicates_in_sheet(read_sheet):
     return context
 
 
-def organization_dupicate_name(df, cleaned_data):
+def organization_dupicate_name(df, cleaned_data,fieldnames):
     cleaned_data = df.drop_duplicates(
-        subset=['organization name'], keep='first')
+        subset=[fieldnames[0]], keep='first')
     name_removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
     return {"cleaned_data": cleaned_data, "name_removed_data": name_removed_data}

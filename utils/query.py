@@ -102,15 +102,15 @@ def bulk_insert_customer_group_addresses(customer_group_addresses, select=False,
     return customer_group_addresses_all
 
 
-def bulk_insert_users(users_data_and_customer_group, select=False, insert=False):
+def bulk_insert_users(users_data_and_customer_group,TENANT_ID, select=False, insert=False):
     users: tuple = ()
     try:
         if insert:
             qry = "INSERT INTO `users`(`name`,`first_name`,`last_name`,`email`,`phone`,`job_title`,`id_customer_group`,`tenant_id`,`role_id`,`created_by`,`status`,`password`,`created_at`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
             insert_update_delete_many(qry, users_data_and_customer_group)
         if select:
-            qry = '''SELECT `email`,`id_customer_group` FROM `users`'''
-            users = select_all(qry)
+            qry = '''SELECT * FROM `users` WHERE `tenant_id` = %s '''
+            users = select_filter(qry,TENANT_ID)
     except Exception as e:
         print(f"users : {str(e)}")
     return users
