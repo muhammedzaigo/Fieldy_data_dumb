@@ -210,14 +210,17 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
             JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group` JOIN `phones` ON `phones`.`phoneable_id`=`customer_group`.`id_customer_group`
             WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `phones`.`tenant_id` = %s'''
             val = (TENANT_ID, TENANT_ID, TENANT_ID)
+            
             if "dupicate_name_in_csv" in context.keys():
                 qry = '''SELECT `customer_group`.* FROM `customer_group`WHERE `customer_group`.`tenant_id` = %s '''
                 val = (TENANT_ID)
+                
         else:
             qry = '''SELECT `customer_group`.*,`users`.* FROM `customer_group`
             JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group`
             WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s'''
             val = (TENANT_ID, TENANT_ID)
+            
         retrive_customer_data_using_tenant_id = select_filter(qry, val)
     except Exception as e:
         print(f"get_bulk_retrive_using_tenant_id : {str(e)}")

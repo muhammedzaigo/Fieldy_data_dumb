@@ -110,13 +110,15 @@ def currect_json_map_and_which_user_type(json_format):
     which_types_imported = CONTACT
     which_types = []
     json_format = currect_address_map(json_format)
+    
     for key, value in json_format.items():
         if value["table_slug"] == "zipcode":
             value["table_slug"] = "zip_code"
-
-        if value["parent"] == "addresses":
-            if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
-                value["parent"] = "branch_addresses"
+            
+        if value["entity"] == "organization":
+            if value["parent"] == "addresses":
+                if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
+                    value["parent"] = "branch_addresses"
 
         if value["parent"] == "":
             if value["table_slug"] in ["name", "website", "email", "first_name", "last_name", "job_title", "lead_source"]:
@@ -133,17 +135,20 @@ def currect_json_map_and_which_user_type(json_format):
 
         which_types.append(value['entity'])
 
-        add_validation_fields(value, key, json_format)
+        json_format = add_validation_fields(value, key, json_format)
 
     if organization:
-        json_format = if_name_in_organization_all_entity_convert_organization(
-            json_format)
+        json_format = if_name_in_organization_all_entity_convert_organization(json_format)
+        which_types_imported = ORGAZANAIZATION
 
     which_types = list(set(which_types))
-    if "contact" not in which_types and len(which_types) != 0:
-        which_types_imported = ORGAZANAIZATION
-    if "contact" in which_types and "organization" in which_types and organization:
-        which_types_imported = ORGAZANAIZATION
+    
+    if not organization:
+        if "contact" not in which_types and len(which_types) != 0:
+            which_types_imported = ORGAZANAIZATION
+        
+        if "contact" in which_types and "organization" in which_types and organization:
+            which_types_imported = ORGAZANAIZATION
 
     return {"json_format": json_format, "user_type": which_types_imported}
 
@@ -151,88 +156,77 @@ def currect_json_map_and_which_user_type(json_format):
 def currect_address_map(json_format):
     address = False
     branch_address = False
+    
     for key, value in json_format.items():
         if value["table_slug"] == "line_1" and value["parent"] == "":
             address = True
         if value["table_slug"] == "line_1" and value["parent"] == "addresses":
             branch_address = True
-
+            
+    if branch_address and address:
+        return json_format
+    
     for key, value in json_format.items():
-
-        if address and branch_address == False:
-            if value["parent"] == "addresses" and value["table_slug"] in ["line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
-                value["parent"] = ""
-
-        if address == False and branch_address:
-            if value["parent"] == "" and value["table_slug"] in ["line_2", "city", "state", "zip_code", "branch_name"]:
-                value["parent"] = "addresses"
-
+        if address and not branch_address:
+            if value["parent"] == "addresses" :
+                if value["table_slug"] in ["line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
+                    value["parent"] = ""
+                    
+        if not address and branch_address:
+            if value["parent"] == "" :
+                if value["table_slug"] in ["line_2", "city", "state", "zip_code", "branch_name"]:
+                    value["parent"] = "addresses"
     return json_format
 
 
 def add_validation_fields(values, key, json_format):
     if values["table_slug"] == "line_1":
-        json_format[key].update({"validation": validation(
-            max="255"), "field_type": "all_characters"})
+        json_format[key].update({"validation": validation(max="255"), "field_type": "all_characters"})
 
     if values["table_slug"] == "line_2":
-        json_format[key].update({"validation": validation(
-            max="150"), "field_type": "all_characters"})
+        json_format[key].update({"validation": validation(max="150"), "field_type": "all_characters"})
 
     if values["table_slug"] == "state":
-        json_format[key].update({"validation": validation(
-            max="255"), "field_type": "all_characters"})
+        json_format[key].update({"validation": validation(max="255"), "field_type": "all_characters"})
 
     if values["table_slug"] == "city":
-        json_format[key].update({"validation": validation(
-            max="255"), "field_type": "all_characters"})
+        json_format[key].update({"validation": validation(max="255"), "field_type": "all_characters"})
 
     if values["table_slug"] == "zip_code":
-        json_format[key].update({"validation": validation(
-            max="18"), "field_type": "all_characters"})
+        json_format[key].update({"validation": validation(max="18"), "field_type": "all_characters"})
 
     if values["table_slug"] == "email":
-        json_format[key].update({"validation": validation(
-            min="64", max="255"), "field_type": "email"})
+        json_format[key].update({"validation": validation(min="64", max="255"), "field_type": "email"})
 
     if values["table_slug"] == "number":
-        json_format[key].update({"validation": validation(
-            min="6", max="15"), "field_type": "number"})
+        json_format[key].update({"validation": validation(min="6", max="15"), "field_type": "number"})
 
     if values["table_slug"] == "phone":
-        json_format[key].update({"validation": validation(
-            min="6", max="15"), "field_type": "number"})
+        json_format[key].update({"validation": validation(min="6", max="15"), "field_type": "number"})
 
     if values["table_slug"] == "lead_source":
-        json_format[key].update({"validation": validation(
-            max="256"), "field_type": "alpha_numeric"})
+        json_format[key].update({"validation": validation(max="256"), "field_type": "alpha_numeric"})
+        
     if values["table_slug"] == "branch_name":
-        json_format[key].update({"validation": validation(
-            max="256"), "field_type": "all_characters"})
+        json_format[key].update({"validation": validation(max="256"), "field_type": "all_characters"})
 
     if values["table_slug"] == "first_name":
-        json_format[key].update({"validation": validation(
-            max="256"), "field_type": "alpha_numeric"})
+        json_format[key].update({"validation": validation(max="256"), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "last_name":
-        json_format[key].update({"validation": validation(
-            max="256",), "field_type": "alpha_numeric"})
+        json_format[key].update({"validation": validation(max="256",), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "job_title":
-        json_format[key].update(
-            {"validation": validation(max="256"), "field_type": "number"})
+        json_format[key].update({"validation": validation(max="256"), "field_type": "number"})
 
     if values["table_slug"] == "name":
-        json_format[key].update({"validation": validation(
-            max="256"), "field_type": "alpha_numeric"})
+        json_format[key].update({"validation": validation(max="256"), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "website":
-        json_format[key].update(
-            {"validation": validation(max="512"), "field_type": "website"})
+        json_format[key].update({"validation": validation(max="512"), "field_type": "website"})
 
     if values["table_slug"] == "id_country":
-        json_format[key].update({"validation": validation(
-            max="90"), "field_type": "all_characters"})
+        json_format[key].update({"validation": validation(max="90"), "field_type": "all_characters"})
 
     return json_format
 
