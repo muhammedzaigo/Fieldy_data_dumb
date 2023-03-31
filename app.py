@@ -88,6 +88,8 @@ def bulk_import_api():
                 df = pd.read_excel(file, sheet_name=None)
                 timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
                 for sheet_name, sheet_data in df.items():
+                    if not os.path.exists("sheets"):
+                        os.mkdir("sheets")
                     csv_filename = f"sheets/{sheet_name}_{timestamp}.csv"
                     sheet_data.to_csv(csv_filename, index=False)
                     with open(csv_filename, 'rb') as csv_file:
