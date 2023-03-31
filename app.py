@@ -187,7 +187,6 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, splite_field_
         if field_type["same_organization_diffrent_user"]:
             same_organization_diffrent_user.append(
                 field_type["same_organization_diffrent_user"])
-
     tables_name = get_table_names_in_json_condition(json_format)
     bulk_insert_id = get_bulk_insert_id(context,select=True, insert=True)
     context.update({'bulk_insert_id': bulk_insert_id})
@@ -221,7 +220,7 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, splite_field_
     return {
         "success_count": success_count,
         "skip_data": len(skip_data),
-        "success": True
+        "success": True,
     }
 
 
@@ -540,22 +539,34 @@ def split_customer_group_for_user(responce_dict, line_index):
         responce_dict["users"] = []
 
     if "customer_group" in responce_dict.keys():
-        user_table_name_dict = {"user_type": "", 'table_name': "customer_group",
-                                'column_name': 'name', "value": "", "valid": True, "line_number": line_index}
+        user_table_name_dict = {"user_type": "", 'table_name': "customer_group",'column_name': 'name', "value": "", "valid": True, "line_number": line_index}
+        contact_person_name = {"user_type": "", 'table_name': "customer_group",'column_name': 'contact_person_name', "value": "", "valid": True, "line_number": line_index}
+        contact_person_first_name = {"user_type": "", 'table_name': "customer_group",'column_name': 'contact_person_first_name', "value": "", "valid": True, "line_number": line_index}
+        contact_person_last_name = {"user_type": "", 'table_name': "customer_group",'column_name': 'contact_person_last_name', "value": "", "valid": True, "line_number": line_index}
 
         for item in responce_dict["customer_group"]:
             if item["user_type"] == "contact":
                 if item['column_name'] == "first_name":
                     responce_dict["users"].append(item)
                     user_table_name_dict["value"] = item["value"]
+                    contact_person_first_name["value"] = item["value"]
+                    contact_person_name["value"] = item["value"]
+                    
                 if item['column_name'] == "last_name":
                     responce_dict["users"].append(item)
+                    contact_person_last_name["value"] = item["value"]
                     user_table_name_dict["value"] += ' '+item["value"]
+                    contact_person_name["value"] +=" "+item["value"]
+                    
                 if item['column_name'] == "email":
                     responce_dict["users"].append(item)
                 if item['column_name'] == "job_title":
                     responce_dict["users"].append(item)
+                    
                 user_table_name_dict["user_type"] = item['user_type']
+                contact_person_name["user_type"] = item['user_type']
+                contact_person_first_name["user_type"] = item['user_type']
+                contact_person_last_name["user_type"] = item['user_type']
 
             if item["user_type"] == "organization":
                 if item['column_name'] == "name":
@@ -565,11 +576,16 @@ def split_customer_group_for_user(responce_dict, line_index):
                 if item['column_name'] == "last_name":
                     responce_dict["users"].append(item)
                 user_table_name_dict["user_type"] = item['user_type']
-
+                
+        
         # remove first_name and last_name field and add name field
         if user_table_name_dict["user_type"] == "contact":
             responce_dict["customer_group"].append(user_table_name_dict)
-
+            responce_dict["customer_group"].append(contact_person_name)
+            responce_dict["customer_group"].append(contact_person_first_name)
+            responce_dict["customer_group"].append(contact_person_last_name)
+        
+        
         responce_dict["customer_group"] = [d for d in responce_dict["customer_group"]
                                            if d['column_name'] not in ('first_name', 'last_name', 'job_title')]
         # add name field in users dictionary
