@@ -7,7 +7,6 @@ import threading
 import os
 import re
 from dotenv import load_dotenv
-from utils.query import bulk_insert_files, bulk_update_customer_group
 import pandas as pd
 import io
 import traceback

@@ -817,7 +817,7 @@ def create_avatar_then_dumb_files_db_and_map_customer_group_thread(customer_grou
             for file_items in files_identifier_list:
                 if file_items[0] == file_identifier:
                     update_file_id_custemer_group.append(
-                        (file_items[1], file_id, TENANT_ID, datetime.datetime.now()))
+                        (file_items[1], file_id, TENANT_ID,bulk_insert_id, datetime.datetime.now()))
                     continue        
         bulk_update_customer_group(update_file_id_custemer_group, insert=True)
         return "File Upload Successfully"
