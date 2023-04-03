@@ -163,13 +163,10 @@ def bulk_insert_files(files_db_dump_data, bulk_insert_id, insert=False, select=F
 
 def bulk_update_customer_group(update_file_id_custemer_group, insert=False):
     customer_group_id_and_emails: tuple = ()
-    try:
-        if insert:
-            qry = '''INSERT INTO `customer_group`(`id_customer_group`,`files`,`tenant_id`,`updated_at`) VALUES (%s,%s,%s,%s)
-            ON DUPLICATE KEY UPDATE files = VALUES(files), updated_at = VALUES(updated_at)'''
-            insert_update_delete_many(qry, update_file_id_custemer_group)
-    except Exception as e:
-        print(f"update_customer_group : {str(e)}")
+    if insert:
+        qry = '''INSERT INTO `customer_group`(`id_customer_group`,`files`,`tenant_id`,`updated_at`) VALUES (%s,%s,%s,%s)
+        ON DUPLICATE KEY UPDATE files = VALUES(files), updated_at = VALUES(updated_at)'''
+        insert_update_delete_many(qry, update_file_id_custemer_group)
     return customer_group_id_and_emails
 
 
