@@ -9,7 +9,7 @@ def email_template(count=10, file_url="", logo_url=""):
           <body style="font-family: sans-serif;">
             <div style="display: block; margin: auto; max-width: 600px;" class="main">
               <h1 style="font-size: 18px; font-weight: bold; margin-top: 20px">
-                Fieldy Project
+                Fieldy Bulk Import
               </h1>
               <p>Dear Admin,</p>
                 <p>Total number of {count} Skiped data. Please

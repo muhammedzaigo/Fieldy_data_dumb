@@ -1,7 +1,11 @@
 from database_connection import *
 import datetime
 
-def get_bulk_insert_id(context,insert=False, select=False):
+CONTACT = 1
+ORGAZANAIZATION = 2
+
+
+def get_bulk_insert_id(context, insert=False, select=False):
     created_by = context["created_by"]
     which_user = context["which_user"]
     filename = context["filename"]
@@ -9,12 +13,12 @@ def get_bulk_insert_id(context,insert=False, select=False):
         entity = "organization"
     else:
         entity = "contact"
-        
+
     bulk_insert_id: int = 0
     try:
         if insert:
             qry = '''INSERT INTO `bulk_insert`(`created_at`,`original_file_name`,`created_by`,`entity`) VALUES (%s,%s,%s,%s)'''
-            val = (datetime.datetime.now(),filename,created_by,entity)
+            val = (datetime.datetime.now(), filename, created_by, entity)
             last_row_id = insert_update_delete(qry, val)
         if select:
             qry = '''SELECT `id` FROM `bulk_insert` ORDER BY id DESC LIMIT 1'''
@@ -102,7 +106,7 @@ def bulk_insert_customer_group_addresses(customer_group_addresses, select=False,
     return customer_group_addresses_all
 
 
-def bulk_insert_users(users_data_and_customer_group,TENANT_ID, select=False, insert=False):
+def bulk_insert_users(users_data_and_customer_group, TENANT_ID, select=False, insert=False):
     users: tuple = ()
     try:
         if insert:
@@ -110,7 +114,7 @@ def bulk_insert_users(users_data_and_customer_group,TENANT_ID, select=False, ins
             insert_update_delete_many(qry, users_data_and_customer_group)
         if select:
             qry = '''SELECT * FROM `users` WHERE `tenant_id` = %s '''
-            users = select_filter(qry,TENANT_ID)
+            users = select_filter(qry, TENANT_ID)
     except Exception as e:
         print(f"users : {str(e)}")
     return users
@@ -199,28 +203,26 @@ def retrive_customer_group_and_addresses_data_use_bulk_insert_id(table_name, bul
 
 def get_bulk_retrive_using_tenant_id(context, json_format):
     TENANT_ID = context["TENANT_ID"]
+    which_user = context["which_user"]
     retrive_customer_data_using_tenant_id = []
-    retrive_include_phone = False
-    for key, value in json_format.items():
-        if value["table_slug"] == "number":
-            retrive_include_phone = True
+
     try:
-        if retrive_include_phone:
-            qry = '''SELECT `customer_group`.*,`users`.*,`phones`.* FROM `customer_group`
-            JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group` JOIN `phones` ON `phones`.`phoneable_id`=`customer_group`.`id_customer_group`
-            WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `phones`.`tenant_id` = %s'''
-            val = (TENANT_ID, TENANT_ID, TENANT_ID)
-            
-            if "dupicate_name_in_csv" in context.keys():
-                qry = '''SELECT `customer_group`.* FROM `customer_group`WHERE `customer_group`.`tenant_id` = %s '''
-                val = (TENANT_ID)
-                
-        else:
+        if which_user == ORGAZANAIZATION:
             qry = '''SELECT `customer_group`.*,`users`.* FROM `customer_group`
             JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group`
-            WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s'''
-            val = (TENANT_ID, TENANT_ID)
-            
+            WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `customer_group`.`customer_type` = %s'''
+            val = (TENANT_ID, TENANT_ID, "company_customer")
+
+            if "dupicate_name_in_csv" in context.keys():
+                qry = '''SELECT `customer_group`.* FROM `customer_group`WHERE `customer_group`.`tenant_id` = %s AND `customer_group`.`customer_type` = %s '''
+                val = (TENANT_ID, "company_customer")
+
+        if which_user == CONTACT:
+            qry = '''SELECT `customer_group`.*,`users`.* FROM `customer_group`
+            JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group`
+            WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `customer_group`.`customer_type` = %s'''
+            val = (TENANT_ID, TENANT_ID, "contact_customer")
+
         retrive_customer_data_using_tenant_id = select_filter(qry, val)
     except Exception as e:
         print(f"get_bulk_retrive_using_tenant_id : {str(e)}")
