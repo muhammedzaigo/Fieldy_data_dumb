@@ -995,7 +995,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                 users_data_and_customer_group, context, role_id, status, hash_password)
 
         if len(users_data_and_customer_group) != 0:
-            bulk_insert_users(users_data_and_customer_group,
+            bulk_insert_users(users_data_and_customer_group,0,
                               TENANT_ID, insert=True)
 
         if len(phone_number_and_customer_group) != 0:
@@ -1023,34 +1023,38 @@ def same_organization_diffrent_user(users_data_and_customer_group, context, role
     created_by = context["created_by"]
 
     if "same_organization_diffrent_user" in context.keys():
-        retrive_user = bulk_insert_users([], TENANT_ID, select=True)
         same_organization_diffrent_user = context["same_organization_diffrent_user"]
         if len(same_organization_diffrent_user) != 0:
-            print("same_organization_diffrent_user   ",same_organization_diffrent_user)
-            
+            coustomer_id_is_dict = {}
             for i in same_organization_diffrent_user:
-                first_name = False
-                last_name = False
-                id = False
-                if len(retrive_user) != 0:
-                    for user in retrive_user:
-                        if i[1] == user[2]:
-                            first_name = True
-                        if i[2] == user[3]:
-                            last_name = True
-                        if i[6] == user[29]:
-                            id = True
-                        if first_name and last_name and id:
-                            break
-                if not first_name and not last_name and id:
-                    print("i ",i)
-                    i.append(TENANT_ID)
-                    i.append(role_id)
-                    i.append(created_by)
-                    i.append(status)
-                    i.append(hash_password)
-                    i.append(datetime.datetime.now())
-                    users_data_and_customer_group.append(tuple(i))
+                if i[6] not in coustomer_id_is_dict:
+                    coustomer_id_is_dict[i[6]] = []
+                coustomer_id_is_dict[i[6]].append(i)
+            for coustomer_id,values in coustomer_id_is_dict.items():
+                retrive_user = bulk_insert_users([],coustomer_id, TENANT_ID, select=True) 
+                for i in values:
+                    first_name = False
+                    last_name = False
+                    id = False
+                    if len(retrive_user) != 0:
+                        for user in retrive_user:
+                            if i[1] == user[2]:
+                                first_name = True
+                            if i[2] == user[3]:
+                                last_name = True
+                            if i[6] == user[29]:
+                                id = True
+                            if first_name and last_name and id:
+                                break
+                    if not first_name and not last_name and id:
+                        i.append(TENANT_ID)
+                        i.append(role_id)
+                        i.append(created_by)
+                        i.append(status)
+                        i.append(hash_password)
+                        i.append(datetime.datetime.now())
+                        users_data_and_customer_group.append(tuple(i))
+                        
     return users_data_and_customer_group
 
 
