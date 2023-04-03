@@ -461,9 +461,11 @@ def skip_contact(customer_list, retrive_customer_data):
                         if retrive[30] == customer["value"]:
                             last_name = True
                 if customer["column_name"] == "email":
-                    if first_name:
                         if retrive[2] == customer["value"]:
                             email = True
+            if email:
+                skip = True
+                break
             if first_name and last_name and email:
                 skip = True
                 break
@@ -815,11 +817,7 @@ def create_avatar_then_dumb_files_db_and_map_customer_group_thread(customer_grou
                 if file_items[0] == file_identifier:
                     update_file_id_custemer_group.append(
                         (file_items[1], file_id, TENANT_ID, datetime.datetime.now()))
-                    continue
-        
-        print("files_identifier_list   ",files_identifier_list)
-        print("update_file_id_custemer_group   ",update_file_id_custemer_group)
-        
+                    continue        
         bulk_update_customer_group(update_file_id_custemer_group, insert=True)
         return "File Upload Successfully"
     except Exception as e:
