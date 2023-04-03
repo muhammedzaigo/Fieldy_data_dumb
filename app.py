@@ -775,7 +775,7 @@ def bulk_insert_function(organized_customer_list, context):
         create_avatar_then_dumb_files_db_and_map_customer_group = threading.Thread(
             target=create_avatar_then_dumb_files_db_and_map_customer_group_thread, args=(
                 retrive_customer_group_data_use_bulk_insert_id, bulk_insert_id, TENANT_ID))
-        create_avatar_then_dumb_files_db_and_map_customer_group.start()
+        # create_avatar_then_dumb_files_db_and_map_customer_group.start()
 
     return {
         "retrive_customer_group": retrive_customer_group_data_use_bulk_insert_id,
@@ -1027,7 +1027,6 @@ def same_organization_diffrent_user(users_data_and_customer_group, context, role
         same_organization_diffrent_user = context["same_organization_diffrent_user"]
         if len(same_organization_diffrent_user) != 0:
             print("same_organization_diffrent_user   ",same_organization_diffrent_user)
-            print("retrive_user   ",retrive_user)
             
             for i in same_organization_diffrent_user:
                 first_name = False
