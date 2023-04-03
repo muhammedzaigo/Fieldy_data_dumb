@@ -28,7 +28,7 @@ app.config['MAIL_PASSWORD'] = str(os.getenv('MAIL_PASSWORD'))
 
 ERROR_TARGET_EMAIL = os.getenv('ERROR_TARGET_EMAIL')
 if ERROR_TARGET_EMAIL is None:
-    ERROR_TARGET_EMAIL = "muhammed@zaigoinfotech.com"
+    ERROR_TARGET_EMAIL = "mrahil7510@gmail.com"
     
 mail = Mail(app)
 
@@ -816,6 +816,10 @@ def create_avatar_then_dumb_files_db_and_map_customer_group_thread(customer_grou
                     update_file_id_custemer_group.append(
                         (file_items[1], file_id, TENANT_ID, datetime.datetime.now()))
                     continue
+        
+        print("files_identifier_list   ",files_identifier_list)
+        print("update_file_id_custemer_group   ",update_file_id_custemer_group)
+        
         bulk_update_customer_group(update_file_id_custemer_group, insert=True)
         return "File Upload Successfully"
     except Exception as e:
