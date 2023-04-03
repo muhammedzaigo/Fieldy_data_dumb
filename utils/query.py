@@ -5,10 +5,11 @@ CONTACT = 1
 ORGAZANAIZATION = 2
 
 
-def get_bulk_insert_id(context, insert=False, select=False):
+def get_bulk_insert_id(context, insert=False):
     created_by = context["created_by"]
     which_user = context["which_user"]
     filename = context["filename"]
+    TENANT_ID = context["TENANT_ID"]
     if which_user == 2:
         entity = "organization"
     else:
@@ -17,13 +18,13 @@ def get_bulk_insert_id(context, insert=False, select=False):
     bulk_insert_id: int = 0
     try:
         if insert:
-            qry = '''INSERT INTO `bulk_insert`(`created_at`,`original_file_name`,`created_by`,`entity`) VALUES (%s,%s,%s,%s)'''
-            val = (datetime.datetime.now(), filename, created_by, entity)
-            last_row_id = insert_update_delete(qry, val)
-        if select:
-            qry = '''SELECT `id` FROM `bulk_insert` ORDER BY id DESC LIMIT 1'''
-            last_row_id = select_all(qry)
-            bulk_insert_id = last_row_id[0][0]
+            qry = '''INSERT INTO `bulk_insert`(`created_at`,`original_file_name`,`created_by`,`entity`,`tenant_id`) VALUES (%s,%s,%s,%s,%s)'''
+            val = (datetime.datetime.now(), filename, created_by, entity,TENANT_ID)
+            bulk_insert_id = insert_update_delete(qry, val)
+        # if select:
+        #     qry = '''SELECT `id` FROM `bulk_insert` WHERE `tenant_id` = %s ORDER BY id DESC LIMIT 1'''
+        #     last_row_id = select_all(qry,TENANT_ID)
+        #     bulk_insert_id = last_row_id[0][0]
     except Exception as e:
         print(f"bulk_insert : {str(e)}")
     return bulk_insert_id

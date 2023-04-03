@@ -189,7 +189,7 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
                 field_type["same_organization_diffrent_user"])
 
     tables_name = get_table_names_in_json_condition(json_format)
-    bulk_insert_id = get_bulk_insert_id(context, select=True, insert=True)
+    bulk_insert_id = get_bulk_insert_id(context,insert=True)
     context.update({'bulk_insert_id': bulk_insert_id})
     organized_customer_list = table_name_use_suparat_all_data(
         organized_customer_list, tables_name)
