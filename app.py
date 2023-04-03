@@ -920,7 +920,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                         if phone:
                             if len(str(phone)) != 0:
                                 phone_number_and_customer_group.append(
-                                    (phone, customer_group_id_and_email[0], TENANT_ID, "App\Model\Tenant\CustomerGroup", datetime.datetime.now()))
+                                    (phone,"work",customer_group_id_and_email[0], TENANT_ID, "App\Model\Tenant\CustomerGroup", datetime.datetime.now()))
 
                         # map customer_group_pk and first name and last name for users table
                         if which_user == ORGAZANAIZATION:
