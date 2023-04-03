@@ -974,10 +974,10 @@ def same_organization_diffrent_user(users_data_and_customer_group, context, role
         retrive_user = bulk_insert_users([], TENANT_ID, select=True)
         same_organization_diffrent_user = context["same_organization_diffrent_user"]
         if len(same_organization_diffrent_user) != 0:
-            first_name = False
-            last_name = False
-            id = False
             for i in same_organization_diffrent_user:
+                first_name = False
+                last_name = False
+                id = False
                 if len(retrive_user) != 0:
                     for user in retrive_user:
                         if i[1] == user[2]:
@@ -986,7 +986,9 @@ def same_organization_diffrent_user(users_data_and_customer_group, context, role
                             last_name = True
                         if i[6] == user[29]:
                             id = True
-                if not first_name and not last_name and not id:
+                        if first_name and last_name and id:
+                            break
+                if not first_name and not last_name and id:
                     i.append(TENANT_ID)
                     i.append(role_id)
                     i.append(created_by)
