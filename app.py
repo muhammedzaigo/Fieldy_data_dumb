@@ -52,6 +52,7 @@ def send_error_thread(message, traceback, logo_url):
     def send_error_email(message, traceback, logo_url):
         with app.app_context():
             try:
+                print(ERROR_TARGET_EMAIL)
                 msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
                               recipients=[str(ERROR_TARGET_EMAIL)])
                 msg.html = error_template(
