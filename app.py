@@ -219,7 +219,6 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
         "duplicate_data": len(duplicate_data),
         "skip_data": len(skip_data),
         "success_count": success_count,
-        "retrive_customer_data":retrive_customer_data
     }
     return {
         "data_count_context": data_count_context,
