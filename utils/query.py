@@ -19,7 +19,8 @@ def get_bulk_insert_id(context, insert=False):
     try:
         if insert:
             qry = '''INSERT INTO `bulk_insert`(`created_at`,`original_file_name`,`created_by`,`entity`,`tenant_id`) VALUES (%s,%s,%s,%s,%s)'''
-            val = (datetime.datetime.now(), filename, created_by, entity,TENANT_ID)
+            val = (datetime.datetime.now(), filename,
+                   created_by, entity, TENANT_ID)
             bulk_insert_id = insert_update_delete(qry, val)
         # if select:
         #     qry = '''SELECT `id` FROM `bulk_insert` WHERE `tenant_id` = %s ORDER BY id DESC LIMIT 1'''
@@ -93,21 +94,21 @@ def bulk_insert_addresses(address, bulk_insert_id, select=False, insert=False):
     return address_id_and_lines
 
 
-def bulk_insert_customer_group_addresses(customer_group_addresses, select=False, insert=False):
+def bulk_insert_customer_group_addresses(customer_group_addresses, bulk_insert_id, select=False, insert=False):
     customer_group_addresses_all: tuple = ()
     try:
         if insert:
-            qry = "INSERT INTO `customer_group_addresses`(`tenant_id`,`id_customer_group`,`id_address`,`is_primary`,`created_at`) VALUES (%s,%s,%s,%s,%s)"
+            qry = "INSERT INTO `customer_group_addresses`(`tenant_id`,`id_customer_group`,`id_address`,`is_primary`,`created_at`,`bulk_insert_id`) VALUES (%s,%s,%s,%s,%s,%s)"
             insert_update_delete_many(qry, customer_group_addresses)
         if select:
-            qry = '''  SELECT * FROM `customer_group_addresses`'''
-            customer_group_addresses_all = select_all(qry)
+            qry = '''  SELECT `id_customer_group`,`id_address`,`bulk_insert_id` FROM `customer_group_addresses` WHERE `is_primary` = 1 AND `bulk_insert_id`= %s'''
+            customer_group_addresses_all = select_filter(qry, bulk_insert_id)
     except Exception as e:
         print(f"customer_group_addresses : {str(e)}")
     return customer_group_addresses_all
 
 
-def bulk_insert_users(users_data_and_customer_group,coustomer_id, TENANT_ID, select=False, insert=False):
+def bulk_insert_users(users_data_and_customer_group, coustomer_id, TENANT_ID, select=False, insert=False):
     users: tuple = ()
     try:
         if insert:
@@ -115,7 +116,7 @@ def bulk_insert_users(users_data_and_customer_group,coustomer_id, TENANT_ID, sel
             insert_update_delete_many(qry, users_data_and_customer_group)
         if select:
             qry = '''SELECT * FROM `users` WHERE `tenant_id` = %s AND `id_customer_group` =%s '''
-            val = (TENANT_ID,coustomer_id)
+            val = (TENANT_ID, coustomer_id)
             users = select_filter(qry, val)
     except Exception as e:
         print(f"users : {str(e)}")
@@ -167,8 +168,19 @@ def bulk_update_customer_group(update_file_id_custemer_group, insert=False):
     if insert:
         qry = '''INSERT INTO `customer_group`(`id_customer_group`,`files`,`tenant_id`,`bulk_insert_id`,`updated_at`) VALUES (%s,%s,%s,%s,%s)
         ON DUPLICATE KEY UPDATE files = VALUES(files), updated_at = VALUES(updated_at)'''
-        customer_group_id_and_emails = insert_update_delete_many(qry, update_file_id_custemer_group)
+        customer_group_id_and_emails = insert_update_delete_many(
+            qry, update_file_id_custemer_group)
     return customer_group_id_and_emails
+
+
+def bulk_update_customer_group_using_primary_address(customer_group_using_primary_address, insert=False):
+    using_primary_address: tuple = ()
+    if insert:
+        qry = '''INSERT INTO `customer_group`(`id_customer_group`,`id_address_front`,`bulk_insert_id`,`tenant_id`) VALUES (%s,%s,%s,%s)
+        ON DUPLICATE KEY UPDATE id_address_front = VALUES(id_address_front)'''
+        using_primary_address = insert_update_delete_many(
+            qry, customer_group_using_primary_address)
+    return using_primary_address
 
 
 def bulk_insert_dynamic(table_name, column_names, values, insert=False):
@@ -189,11 +201,11 @@ def retrive_customer_group_and_addresses_data_use_bulk_insert_id(table_name, bul
     customer_group_id_and_emails: tuple = ()
     try:
         if select_customer_group:
-            qry = ''' SELECT `id_customer_group`,`email`,`name` FROM `customer_group` WHERE `bulk_insert_id` = %s and `customer_type` = %s'''
+            qry = ''' SELECT `id_customer_group`,`email`,`name`,`website`,`row_index` FROM `customer_group` WHERE `bulk_insert_id` = %s and `customer_type` = %s'''
             val = (bulk_insert_id, custemer_type)
             customer_group_id_and_emails = select_filter(qry, val)
         if select_address:
-            qry = ''' SELECT `id_address`,`line_1`,`line_2` FROM `addresses` WHERE `bulk_insert_id` = %s'''
+            qry = ''' SELECT `id_address`,`line_1`,`line_2`,`zip_code`,`city`,`state`,`branch_name`,`first_name`,`last_name`,`row_index` FROM `addresses` WHERE `bulk_insert_id` = %s'''
             customer_group_id_and_emails = select_filter(qry, bulk_insert_id)
     except Exception as e:
         print(f"{table_name} : {str(e)}")

@@ -67,14 +67,16 @@ def currect_json_map_and_which_user_type(json_format):
         if value["table_slug"] == "zipcode":
             value["table_slug"] = "zip_code"
 
-        if value["entity"] == "organization":
-            if value["parent"] == "addresses":
-                if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
-                    value["parent"] = "branch_addresses"
+        if value["parent"] == "addresses": # contact and organization address change to branch_address
+            if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
+                value["parent"] = "branch_addresses"
 
         if value["parent"] == "":
             if value["table_slug"] in ["name", "website", "email", "first_name", "last_name", "job_title", "lead_source"]:
                 value["parent"] = "customer_group"
+             
+            if value["table_slug"] ==  "job_title":
+                value["parent"] = "users"   
 
             if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name"]:
                 value["parent"] = "addresses"
