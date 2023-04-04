@@ -139,7 +139,7 @@ def bulk_insert_phones(phone_number_and_customer_group, select=False, insert=Fal
     phones: tuple = ()
     try:
         if insert:
-            qry = "INSERT INTO `phones`(`number`,`label`,`phoneable_id`,`TENANT_ID`,`phoneable_type`,`created_at`) VALUES (%s,%s,%s,%s,%s,%s)"
+            qry = "INSERT INTO `phones`(`number`,`label`,`phoneable_id`,`TENANT_ID`,`phoneable_type`,`raw_number`,`created_at`) VALUES (%s,%s,%s,%s,%s,%s,%s)"
             insert_update_delete_many(qry, phone_number_and_customer_group)
         if select:
             qry = '''  SELECT `number`,`phoneable_id`  FROM `phones`'''

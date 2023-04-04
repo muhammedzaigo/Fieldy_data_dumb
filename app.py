@@ -220,8 +220,6 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
         "duplicate_data": len(duplicate_data),
         "skip_data": len(skip_data),
         "success_count": success_count,
-        "customer_list":customer_list,
-        "organized_customer_list":organized_customer_list
     }
     return {
         "data_count_context": data_count_context,
@@ -997,8 +995,9 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                         # map customer_group_pk and phone number for phones table
                             if phone:
                                 if len(str(phone)) != 0:
+                                    converted_number = re.sub(r'[^0-9]', '', str(phone))
                                     phone_number_and_customer_group.append(
-                                        (phone,"work",customer_group_id_and_email[0], TENANT_ID, "App\Model\Tenant\CustomerGroup", datetime.datetime.now()))
+                                        (phone,"work",customer_group_id_and_email[0], TENANT_ID, "App\Model\Tenant\CustomerGroup",converted_number, datetime.datetime.now()))
 
                             # map customer_group_pk and first name and last name for users table
                             if which_user == ORGAZANAIZATION:
