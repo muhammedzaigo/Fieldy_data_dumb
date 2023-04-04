@@ -235,7 +235,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
     skip_data = []
     same_organization_diffrent_user = None
     json_format_keys = json_format.keys()
-
+    invalid = False
     for column_index, key in enumerate(json_format_keys):
 
         user_type = json_format[key]['entity']
@@ -257,7 +257,9 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
                                                           user_type, table_name, column_name, validation, field_type, value, column_index)
             if field_format_return_dict["valid"]:
                 customer_list.append((field_format_return_dict))
+                invalid_data.append((field_format_return_dict))
             else:
+                invalid = True
                 invalid_data.append((field_format_return_dict))
 
                 field_format_return_dict_copy = field_format_return_dict.copy()
@@ -269,13 +271,18 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
                                                           user_type, table_name, column_name, validation, field_type, value, column_index)
             if field_format_return_dict["valid"]:
                 customer_list.append((field_format_return_dict))
-            else:
                 invalid_data.append((field_format_return_dict))
-
+            else:
+                invalid = True
+                invalid_data.append((field_format_return_dict))
+                
                 field_format_return_dict_copy = field_format_return_dict.copy()
                 field_format_return_dict_copy["value"] = ""
                 customer_list.append((field_format_return_dict_copy))
 
+    if not invalid:
+        invalid_data = []
+                
     customer_list = add_new_field_based_on_user_type(
         row_index, customer_list, context["which_user"])
 
