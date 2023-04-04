@@ -3,14 +3,11 @@ import string
 import datetime
 import avinit
 import bcrypt
-import threading
 import os
 import re
 from dotenv import load_dotenv
 import pandas as pd
 import io
-import traceback
-import json
 import chardet
 
 load_dotenv()
