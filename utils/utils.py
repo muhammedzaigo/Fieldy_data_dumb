@@ -185,7 +185,7 @@ def add_validation_fields(values, key, json_format):
 
     if values["table_slug"] == "job_title":
         json_format[key].update(
-            {"validation": validation(max="256"), "field_type": "number"})
+            {"validation": validation(max="256"), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "name":
         json_format[key].update({"validation": validation(
@@ -236,12 +236,12 @@ def is_valid_url(url, min=1, max=256):
 
 
 def is_valid_phone_number(number, min=6, max=15):
-    # pattern = r"^\+?[1-9]\d{%d,%d}$" % (min-1, max-1)
-    # return bool(re.match(pattern, number))
-    # return True if len(number) >= min and len(number) <= max else False
+    converted_number = re.sub(r'[^0-9]', '', str(number))
+    pattern = r"^\+?[1-9]\d{%d,%d}$" % (min-1, max-1)
     response = {}
-    if len(number) >= min and len(number) <= max:
-        response.update({"valid": True})
+    if re.match(pattern, converted_number):
+        if len(converted_number) >= min and len(converted_number) <= max:
+            response.update({"valid": True})
     else:
         response.update(
             {"valid": False, "message": f"Invalid phone number or phone number must be minimum {min} and maximam {max} characters"})
@@ -249,8 +249,6 @@ def is_valid_phone_number(number, min=6, max=15):
 
 
 def is_valid_alphanumeric(text, min=1, max=256):
-    # pattern = r"[a-zA-Z0-9]+"
-    # return bool(re.match(pattern, text)) and len(text) <= max
     response = {}
     pattern = r"[a-zA-Z0-9]+"
     if re.match(pattern, text) and len(text) <= max:
@@ -262,7 +260,6 @@ def is_valid_alphanumeric(text, min=1, max=256):
 
 
 def is_all_characters(text, min=1, max=256):
-    # return len(str(text)) <= max
     response = {}
     if len(str(text)) <= max:
         response.update({"valid": True})
