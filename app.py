@@ -651,11 +651,14 @@ def send_mail_skip_data_and_invalid_data_convert_to_csv(field_names, skip_data, 
     field_names_copy = field_names.copy()
     field_names_copy.insert(0, "line Number")
     if len(skip_data) != 0:
+        print("skipped data")
         skip_data_count = len(skip_data)
         send_mail_skip_data = threading.Thread(
             target=send_skipped_data, args=(field_names_copy, skip_data, target_email, skip_data_count))
         send_mail_skip_data.start()
     if len(invalid_data) != 0:
+        print("invalid data")
+        
         invalid_data_count = len(invalid_data)
         send_mail_invalid_data = threading.Thread(
             target=send_invalid_data, args=(field_names_copy, invalid_data, target_email, invalid_data_count))
