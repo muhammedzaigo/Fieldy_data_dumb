@@ -1054,7 +1054,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                     is_primary = 1
 
                     for address_id_and_line in address_id_and_lines:
-                        if str(addresses_line_1) == address_id_and_line[1] and str(addresses_line_2) == address_id_and_line[2]:
+                        if str(addresses_line_1) == address_id_and_line[1] and addresses_line_2 == address_id_and_line[2]:
                             if addresses_city == address_id_and_line[4] and addresses_state ==address_id_and_line[5] and addresses_zip_code == address_id_and_line[3]:
                                 if addresses_row_index == address_id_and_line[9]:
                                     customer_group_pk_and_address_pk.append(
@@ -1081,7 +1081,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                         is_primary = 1
 
                     for address_id_and_line in address_id_and_lines:
-                        if str(branch_addresses_line_1) == address_id_and_line[1] and str(branch_addresses_line_2) == address_id_and_line[2]:
+                        if str(branch_addresses_line_1) == address_id_and_line[1] and branch_addresses_line_2 == address_id_and_line[2]:
                             if branch_addresses_city == address_id_and_line[4] and branch_addresses_state == address_id_and_line[5] and branch_addresses_zip_code == address_id_and_line[3]:
                                 if branch_addresses_first_name == address_id_and_line[7] and branch_addresses_last_name == address_id_and_line[8] and branch_addresses_branch_name == address_id_and_line[6] :
                                     if branch_addresses_row_index == address_id_and_line[9]:
