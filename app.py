@@ -218,6 +218,9 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
         "duplicate_data": len(duplicate_data),
         "skip_data": len(skip_data),
         "success_count": success_count,
+        "organized_customer_list":organized_customer_list,
+        "customer_list":customer_list,
+        "retrive_customer_data":retrive_customer_data
     }
     return {
         "data_count_context": data_count_context,
@@ -286,7 +289,6 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
 
     if context["which_user"] == CONTACT:
         skip = is_skip_data(row_index,context, customer_list, retrive_customer_data)
-        print("skip ",skip)
         customer_list = skip["customer_list"]
         if skip["skip"]:
             skip_data = customer_list
@@ -477,15 +479,18 @@ def skip_contact(row_index,customer_list, retrive_customer_data):
                         if retrive[30] == customer["value"]:
                             last_name = True
                 if customer["column_name"] == "email":
+                    if len(customer["value"]) != 0:
                         if retrive[2] == customer["value"]:
                             email = True
             if email:
-                print("email ",email)
                 skip = True
                 break
             if first_name and last_name and email:
                 skip = True
                 break
+            if first_name and last_name:
+                skip = True
+                break           
     return {"skip": skip, "customer_list": remove_customer_list_is_delete_true}
 
 
