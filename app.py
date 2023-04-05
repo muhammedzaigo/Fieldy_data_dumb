@@ -470,21 +470,36 @@ def skip_contact(row_index,customer_list, retrive_customer_data):
             first_name = False
             last_name = False
             email = False
+            is_first_name = False
+            is_last_name = False
+            is_email = False
             for customer in remove_customer_list_is_delete_true:
                 if customer["column_name"] == "first_name":
+                    is_first_name = True
                     if retrive[14] == customer["value"]:
                         first_name = True
                 if customer["column_name"] == "last_name":
+                    is_last_name = True
                     if first_name:
                         if retrive[15] == customer["value"]:
                             last_name = True
                 if customer["column_name"] == "email":
+                    is_email = True
                     if len(customer["value"]) != 0:
                         if retrive[2] == customer["value"]:
                             email = True
+                            
             if email:
                 skip = True
                 break
+            if is_first_name and not is_last_name:
+                if first_name:
+                    skip = True
+                    break
+            if is_first_name and is_email and not is_last_name:
+                if first_name and email:
+                    skip = True
+                    break
             if first_name and last_name and email:
                 skip = True
                 break
