@@ -36,6 +36,7 @@ mail = Mail(app)
 def send_email(count, file_url, logo_url, target_email, filename=None):
     with app.app_context():
         try:
+            
             msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
                           recipients=[target_email])
             with app.open_resource(file_url) as csv_file:
@@ -52,7 +53,6 @@ def send_error_thread(message, traceback, logo_url):
     def send_error_email(message, traceback, logo_url):
         with app.app_context():
             try:
-                print(ERROR_TARGET_EMAIL)
                 msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
                               recipients=[str(ERROR_TARGET_EMAIL)])
                 msg.html = error_template(
@@ -160,7 +160,6 @@ def bulk_import_api():
 def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, json_format, duplicate_data, target_email):
     retrive_customer_data = get_bulk_retrive_using_tenant_id(
         context, json_format)
-
     organized_customer_list = []
     customer_list = []
     invalid_data = []
@@ -206,7 +205,6 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
             {"same_organization_diffrent_user": same_organization_diffrent_user})
         bulk_insert_using_bulk_type(
             context, organized_customer_list, customer_list)
-
     if target_email:
         send_mail = threading.Thread(target=send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
             field_names, skip_data, invalid_data, duplicate_data, target_email))
@@ -220,6 +218,7 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
         "duplicate_data": len(duplicate_data),
         "skip_data": len(skip_data),
         "success_count": success_count,
+
     }
     return {
         "data_count_context": data_count_context,
@@ -469,23 +468,42 @@ def skip_contact(row_index,customer_list, retrive_customer_data):
             first_name = False
             last_name = False
             email = False
+            is_first_name = False
+            is_last_name = False
+            is_email = False
             for customer in remove_customer_list_is_delete_true:
                 if customer["column_name"] == "first_name":
-                    if retrive[29] == customer["value"]:
+                    is_first_name = True
+                    if retrive[14] == customer["value"]:
                         first_name = True
                 if customer["column_name"] == "last_name":
+                    is_last_name = True
                     if first_name:
-                        if retrive[30] == customer["value"]:
+                        if retrive[15] == customer["value"]:
                             last_name = True
                 if customer["column_name"] == "email":
+                    is_email = True
+                    if len(customer["value"]) != 0:
                         if retrive[2] == customer["value"]:
                             email = True
+                            
             if email:
                 skip = True
                 break
+            if is_first_name and is_email and not is_last_name:
+                if first_name and email:
+                    skip = True
+                    break
+            if is_first_name and not is_last_name:
+                if first_name:
+                    skip = True
+                    break
             if first_name and last_name and email:
                 skip = True
                 break
+            if first_name and last_name:
+                skip = True
+                break           
     return {"skip": skip, "customer_list": remove_customer_list_is_delete_true}
 
 
@@ -541,7 +559,7 @@ def finding_which_data(row_index, user_type, table_name, column_name, validation
         valid = {"valid": True}
     if valid["valid"]:
         field_format_dict.update(
-            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": value, "valid": valid["valid"], "is_deleted": False, "line_number": row_index, "column_number": column_index})
+            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": str(value), "valid": valid["valid"], "is_deleted": False, "line_number": row_index, "column_number": column_index})
     else:
         message = valid["message"]
         field_format_dict.update(
@@ -652,7 +670,7 @@ def send_mail_skip_data_and_invalid_data_convert_to_csv(field_names, skip_data, 
         send_mail_skip_data = threading.Thread(
             target=send_skipped_data, args=(field_names_copy, skip_data, target_email, skip_data_count))
         send_mail_skip_data.start()
-    if len(invalid_data) != 0:
+    if len(invalid_data) != 0:        
         invalid_data_count = len(invalid_data)
         send_mail_invalid_data = threading.Thread(
             target=send_invalid_data, args=(field_names_copy, invalid_data, target_email, invalid_data_count))
@@ -990,6 +1008,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
             if customer_name is None and len(customer_first_name) != 0:
                 customer_name = customer_first_name+" "+customer_last_name
+                customer_name = customer_name.strip()
 
             customer_group_pk_and_address_pk = []
             customer_group_pk_and_address_pk_branch_address = []
@@ -997,7 +1016,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
             if len(customer_group_id_and_emails) != 0:
                 for customer_group_id_and_email in customer_group_id_and_emails:
 
-                    if customer_email == customer_group_id_and_email[1] and (customer_name).strip() == customer_group_id_and_email[2] :
+                    if customer_email == customer_group_id_and_email[1] and customer_name == customer_group_id_and_email[2] :
                         if customer_row_index == customer_group_id_and_email[4] and customer_website == customer_group_id_and_email[3]:
                         # map customer_group_pk and phone number for phones table
                             if phone:
