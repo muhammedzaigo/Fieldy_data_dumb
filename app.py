@@ -188,7 +188,7 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
         if field_type["same_organization_diffrent_user"]:
             same_organization_diffrent_user.append(
                 field_type["same_organization_diffrent_user"])
-
+    
     tables_name = get_table_names_in_json_condition(json_format)
     bulk_insert_id = get_bulk_insert_id(context,insert=True)
     context.update({'bulk_insert_id': bulk_insert_id})
@@ -235,7 +235,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
     skip_data = []
     same_organization_diffrent_user = None
     json_format_keys = json_format.keys()
-
+    invalid = False
     for column_index, key in enumerate(json_format_keys):
 
         user_type = json_format[key]['entity']
@@ -257,7 +257,9 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
                                                           user_type, table_name, column_name, validation, field_type, value, column_index)
             if field_format_return_dict["valid"]:
                 customer_list.append((field_format_return_dict))
+                invalid_data.append((field_format_return_dict))
             else:
+                invalid = True
                 invalid_data.append((field_format_return_dict))
 
                 field_format_return_dict_copy = field_format_return_dict.copy()
@@ -269,18 +271,23 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
                                                           user_type, table_name, column_name, validation, field_type, value, column_index)
             if field_format_return_dict["valid"]:
                 customer_list.append((field_format_return_dict))
-            else:
                 invalid_data.append((field_format_return_dict))
-
+            else:
+                invalid = True
+                invalid_data.append((field_format_return_dict))
+                
                 field_format_return_dict_copy = field_format_return_dict.copy()
                 field_format_return_dict_copy["value"] = ""
                 customer_list.append((field_format_return_dict_copy))
 
+    if not invalid:
+        invalid_data = []
+                
     customer_list = add_new_field_based_on_user_type(
         row_index, customer_list, context["which_user"])
 
     if context["which_user"] == CONTACT:
-        skip = is_skip_data(context, customer_list, retrive_customer_data)
+        skip = is_skip_data(row_index,context, customer_list, retrive_customer_data)
         customer_list = skip["customer_list"]
         if skip["skip"]:
             skip_data = customer_list
@@ -289,7 +296,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
                 row_index, customer_list)
 
     if context["which_user"] == ORGAZANAIZATION:
-        skip = is_skip_data(context, customer_list,
+        skip = is_skip_data(row_index,context, customer_list,
                             retrive_customer_data, organization=True)
         customer_list = skip["customer_list"]
         if skip["skip"]:
@@ -310,22 +317,22 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
     return contaxt
 
 
-def is_skip_data(context, customer_list, retrive_customer_data, organization=False):
+def is_skip_data(row_index,context, customer_list, retrive_customer_data, organization=False):
     if organization:
         context_data = skip_organization(
-            context, customer_list, retrive_customer_data)
+            row_index,context, customer_list, retrive_customer_data)
     else:
-        context_data = skip_contact(customer_list, retrive_customer_data)
+        context_data = skip_contact(row_index,customer_list, retrive_customer_data)
     return context_data
 
 
-def skip_organization(context, customer_list, retrive_customer_data):
+def skip_organization(row_index,context, customer_list, retrive_customer_data):
     same_organization_name_diffrent_user = ["", "", "", "", "", "", ""]
     organization_user = False
     skip = False
     name = False
-    branch_addresses = False
-    address = False
+    not_branch_addresses = False
+    not_address = False
     remove_customer_list_is_delete_true = []
 
     for customer in customer_list:
@@ -334,23 +341,29 @@ def skip_organization(context, customer_list, retrive_customer_data):
 
         if customer["column_name"] == "line_1" and customer["table_name"] == "addresses":
             if len(str(customer["value"])) == 0:
-                address = True
+                not_address = True
                 customer["is_deleted"] = True
+            else:
+                customer_list.append(add_new_field(
+                    "organization", "addresses", "row_index",row_index, row_index))
 
         if customer["column_name"] == "line_1" and customer["table_name"] == "branch_addresses":
             if len(str(customer["value"])) == 0:
-                branch_addresses = True
+                not_branch_addresses = True
                 customer["is_deleted"] = True
-
+            else:
+                customer_list.append(add_new_field(
+                    "organization", "branch_addresses", "row_index",row_index, row_index))
+                
         if customer["column_name"] == "number" and customer["table_name"] == "phones":
             if len(str(customer["value"])) == 0:
                 customer["is_deleted"] = True
 
-        if address:
+        if not_address:
             if customer["table_name"] == "addresses":
                 customer["is_deleted"] = True
 
-        if branch_addresses:
+        if not_branch_addresses:
             if customer["table_name"] == "branch_addresses":
                 customer["is_deleted"] = True
 
@@ -420,26 +433,29 @@ def skip_organization(context, customer_list, retrive_customer_data):
     return context_val
 
 
-def skip_contact(customer_list, retrive_customer_data):
+def skip_contact(row_index,customer_list, retrive_customer_data):
     skip = False
     name = False
-    address = False
+    not_address = False
     remove_customer_list_is_delete_true = []
     for customer in customer_list:
         if customer["column_name"] == "first_name" and customer["table_name"] == "customer_group":
             name = len(str(customer["value"])) != 0
 
-        if customer["column_name"] == "line_1":
+        if customer["column_name"] == "line_1" and customer["table_name"] == "branch_addresses":
             if len(str(customer["value"])) == 0:
-                address = True
+                not_address = True
                 customer["is_deleted"] = True
-
+            else:
+                customer_list.append(add_new_field(
+                    "organization", "branch_addresses", "row_index",row_index, row_index))
+                
         if customer["column_name"] == "number" and customer["table_name"] == "phones":
             if len(str(customer["value"])) == 0:
                 customer["is_deleted"] = True
 
-        if address:
-            if customer["table_name"] == "addresses":
+        if not_address:
+            if customer["table_name"] == "branch_addresses":
                 customer["is_deleted"] = True
 
     for customer in customer_list:
@@ -503,7 +519,9 @@ def common_fields(customer_list, user_type, row_index):
     customer_list.append(add_new_field(
         user_type, "customer_group", "type", "customer_company", row_index))
     customer_list.append(add_new_field(
-        user_type, "customer_group", "status", 5, row_index))
+        user_type, "customer_group", "status", 5, row_index))  
+    customer_list.append(add_new_field(
+        user_type, "customer_group", "row_index", row_index, row_index))  
     return customer_list
 
 
@@ -619,7 +637,7 @@ def split_customer_group_for_user(responce_dict, row_index):
             responce_dict["customer_group"].append(contact_person_last_name)
 
         responce_dict["customer_group"] = [d for d in responce_dict["customer_group"]
-                                           if d['column_name'] not in ('first_name', 'last_name', 'job_title')]
+                                           if d['column_name'] not in ('first_name', 'last_name')]
         # add name field in users dictionary
         responce_dict["users"].append(user_table_name_dict)
     return responce_dict
@@ -837,6 +855,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
         TENANT_ID = context["TENANT_ID"]
         created_by = context["created_by"]
         which_user = context["which_user"]
+        bulk_insert_id = context["bulk_insert_id"]
 
         customer_group_addresses = []
         phone_number_and_customer_group = []
@@ -852,11 +871,29 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
             customer_last_name = ""
             customer_email = None
             customer_name = None
+            customer_website = None
+            customer_row_index = None
+            
             phone = None
+            
             addresses_line_1 = None
             addresses_line_2 = None
+            addresses_city = None
+            addresses_city = None
+            addresses_state = None
+            addresses_zip_code  = None
+            addresses_row_index = None
+            
             branch_addresses_line_1 = None
             branch_addresses_line_2 = None
+            branch_addresses_first_name  = None
+            branch_addresses_last_name = None
+            branch_addresses_branch_name = None
+            branch_addresses_city = None
+            branch_addresses_state = None
+            branch_addresses_zip_code = None
+            branch_addresses_row_index = None
+            
             users_first_name = None
             users_last_name = None
             users_email = None
@@ -875,9 +912,13 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
                 if value["column_name"] == "name" and value["table_name"] == "customer_group":
                     customer_name = value["value"]
+                    
+                if value["column_name"] == "website" and value["table_name"] == "customer_group":
+                    customer_website = value["value"]
 
-                if value["column_name"] == "job_title" and value["table_name"] == "customer_group":
-                    users_job_title = value["value"]
+                if value["column_name"] == "row_index" and value["table_name"] == "customer_group":
+                    customer_row_index = value["value"]
+
 
                 if value["column_name"] == "line_1" and value["table_name"] == "addresses":
                     addresses_line_1 = value["value"]
@@ -885,14 +926,51 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                 if value["column_name"] == "line_2" and value["table_name"] == "addresses":
                     addresses_line_2 = value["value"]
 
+                if value["column_name"] == "city" and value["table_name"] == "addresses":
+                    addresses_city = value["value"]
+                
+                if value["column_name"] == "state" and value["table_name"] == "addresses":
+                    addresses_state = value["value"]    
+                    
+                if value["column_name"] == "zip_code" and value["table_name"] == "addresses":
+                    addresses_zip_code = value["value"]
+                    
+                if value["column_name"] == "row_index" and value["table_name"] == "addresses":
+                    addresses_row_index = value["value"]
+                    
+                    
+
                 if value["column_name"] == "line_1" and value["table_name"] == "branch_addresses":
                     branch_addresses_line_1 = value["value"]
 
                 if value["column_name"] == "line_2" and value["table_name"] == "branch_addresses":
                     branch_addresses_line_2 = value["value"]
 
+                if value["column_name"] == "first_name" and value["table_name"] == "branch_addresses":
+                    branch_addresses_first_name = value["value"]
+
+                if value["column_name"] == "last_name" and value["table_name"] == "branch_addresses":
+                    branch_addresses_last_name = value["value"]
+                    
+                if value["column_name"] == "branch_name" and value["table_name"] == "branch_addresses":
+                    branch_addresses_branch_name = value["value"]
+
+                if value["column_name"] == "city" and value["table_name"] == "branch_addresses":
+                    branch_addresses_city = value["value"]
+                
+                if value["column_name"] == "state" and value["table_name"] == "branch_addresses":
+                    branch_addresses_state = value["value"]    
+                    
+                if value["column_name"] == "zip_code" and value["table_name"] == "branch_addresses":
+                    branch_addresses_zip_code = value["value"]
+                            
+                if value["column_name"] == "row_index" and value["table_name"] == "branch_addresses":
+                    branch_addresses_row_index = value["value"]            
+                    
+                    
                 if value["column_name"] == "number" and value["table_name"] == "phones":
                     phone = value["value"]
+
 
                 if value["column_name"] == "first_name" and value["table_name"] == "users":
                     users_first_name = value["value"]
@@ -905,6 +983,10 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
                 if value["column_name"] == "phone" and value["table_name"] == "users":
                     users_phone = value["value"]
+                    
+                if value["column_name"] == "job_title" and value["table_name"] == "users":
+                    users_job_title = value["value"]
+
 
             if customer_name is None and len(customer_first_name) != 0:
                 customer_name = customer_first_name+" "+customer_last_name
@@ -915,34 +997,36 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
             if len(customer_group_id_and_emails) != 0:
                 for customer_group_id_and_email in customer_group_id_and_emails:
 
-                    if customer_email == customer_group_id_and_email[1] and customer_name == customer_group_id_and_email[2]:
+                    if customer_email == customer_group_id_and_email[1] and (customer_name).strip() == customer_group_id_and_email[2] :
+                        if customer_row_index == customer_group_id_and_email[4] and customer_website == customer_group_id_and_email[3]:
                         # map customer_group_pk and phone number for phones table
-                        if phone:
-                            if len(str(phone)) != 0:
-                                phone_number_and_customer_group.append(
-                                    (phone,"work",customer_group_id_and_email[0], TENANT_ID, "App\Model\Tenant\CustomerGroup", datetime.datetime.now()))
+                            if phone:
+                                if len(str(phone)) != 0:
+                                    converted_number = re.sub(r'[^0-9]', '', str(phone))
+                                    phone_number_and_customer_group.append(
+                                        (phone,"work",customer_group_id_and_email[0], TENANT_ID, "App\Model\Tenant\CustomerGroup",converted_number, datetime.datetime.now()))
 
-                        # map customer_group_pk and first name and last name for users table
-                        if which_user == ORGAZANAIZATION:
-                            if users_first_name != None or users_last_name != None:
-                                users_name = f"{users_first_name} {users_last_name}"
+                            # map customer_group_pk and first name and last name for users table
+                            if which_user == ORGAZANAIZATION:
+                                if users_first_name != None or users_last_name != None:
+                                    users_name = f"{users_first_name} {users_last_name}"
+                                    users_data_and_customer_group.append(
+                                        (users_name, users_first_name, users_last_name, users_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
                                 users_data_and_customer_group.append(
-                                    (users_name, users_first_name, users_last_name, users_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
-                            users_data_and_customer_group.append(
-                                (customer_name, "", "", customer_email, "", "", customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
+                                    (customer_name, "", "", customer_email, "", "", customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
 
-                        if which_user == CONTACT:
-                            users_data_and_customer_group.append(
-                                (customer_name, customer_first_name, customer_last_name, customer_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
+                            if which_user == CONTACT:
+                                users_data_and_customer_group.append(
+                                    (customer_name, customer_first_name, customer_last_name, customer_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
 
-                        if addresses_line_1 is not None:
-                            customer_group_pk_and_address_pk.append(
-                                customer_group_id_and_email[0])
+                            if addresses_line_1 is not None:
+                                customer_group_pk_and_address_pk.append(
+                                    customer_group_id_and_email[0])
 
-                        if branch_addresses_line_1 is not None:
-                            customer_group_pk_and_address_pk_branch_address.append(
-                                customer_group_id_and_email[0])
-                        break
+                            if branch_addresses_line_1 is not None:
+                                customer_group_pk_and_address_pk_branch_address.append(
+                                    customer_group_id_and_email[0])
+                            break
 
             if len(address_id_and_lines) != 0:
 
@@ -952,10 +1036,12 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
                     for address_id_and_line in address_id_and_lines:
                         if str(addresses_line_1) == address_id_and_line[1] and str(addresses_line_2) == address_id_and_line[2]:
-                            customer_group_pk_and_address_pk.append(
-                                address_id_and_line[0])
-                            address_id = True
-                            break
+                            if addresses_city == address_id_and_line[4] and addresses_state ==address_id_and_line[5] and addresses_zip_code == address_id_and_line[3]:
+                                if addresses_row_index == address_id_and_line[9]:
+                                    customer_group_pk_and_address_pk.append(
+                                        address_id_and_line[0])
+                                    address_id = True
+                                    break
 
                     if address_id:
                         customer_group_pk_and_address_pk.insert(0, TENANT_ID)
@@ -963,6 +1049,8 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                             3, str(is_primary))
                         customer_group_pk_and_address_pk.insert(
                             4, datetime.datetime.now())
+                        customer_group_pk_and_address_pk.insert(
+                            5, bulk_insert_id)
                         customer_group_addresses.append(
                             (customer_group_pk_and_address_pk))
 
@@ -975,10 +1063,13 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
                     for address_id_and_line in address_id_and_lines:
                         if str(branch_addresses_line_1) == address_id_and_line[1] and str(branch_addresses_line_2) == address_id_and_line[2]:
-                            customer_group_pk_and_address_pk_branch_address.append(
-                                address_id_and_line[0])
-                            branch_address_id = True
-                            break
+                            if branch_addresses_city == address_id_and_line[4] and branch_addresses_state == address_id_and_line[5] and branch_addresses_zip_code == address_id_and_line[3]:
+                                if branch_addresses_first_name == address_id_and_line[7] and branch_addresses_last_name == address_id_and_line[8] and branch_addresses_branch_name == address_id_and_line[6] :
+                                    if branch_addresses_row_index == address_id_and_line[9]:
+                                        customer_group_pk_and_address_pk_branch_address.append(
+                                            address_id_and_line[0])
+                                        branch_address_id = True
+                                        break
 
                     if branch_address_id:
                         customer_group_pk_and_address_pk_branch_address.insert(
@@ -987,6 +1078,8 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                             3, str(is_primary))
                         customer_group_pk_and_address_pk_branch_address.insert(
                             4, datetime.datetime.now())
+                        customer_group_pk_and_address_pk_branch_address.insert(
+                            5, bulk_insert_id)
                         customer_group_addresses.append(
                             (customer_group_pk_and_address_pk_branch_address))
 
@@ -1002,8 +1095,15 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
             bulk_insert_phones(phone_number_and_customer_group, insert=True)
 
         if len(customer_group_addresses) != 0:
-            bulk_insert_customer_group_addresses(
-                customer_group_addresses, insert=True)
+            customer_group_addresses = bulk_insert_customer_group_addresses(
+                customer_group_addresses,bulk_insert_id, insert=True,select=True)
+            if which_user == ORGAZANAIZATION:
+                customer_group_using_primary_address = []
+                for i in customer_group_addresses:
+                    i = list(i)
+                    i.append(TENANT_ID)
+                    customer_group_using_primary_address.append(i)
+                bulk_update_customer_group_using_primary_address(customer_group_using_primary_address, insert=True)
 
         return "Successfully inserted"
     except Exception as e:
