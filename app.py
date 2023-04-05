@@ -472,11 +472,11 @@ def skip_contact(row_index,customer_list, retrive_customer_data):
             email = False
             for customer in remove_customer_list_is_delete_true:
                 if customer["column_name"] == "first_name":
-                    if retrive[29] == customer["value"]:
+                    if retrive[30] == customer["value"]:
                         first_name = True
                 if customer["column_name"] == "last_name":
                     if first_name:
-                        if retrive[30] == customer["value"]:
+                        if retrive[31] == customer["value"]:
                             last_name = True
                 if customer["column_name"] == "email":
                     if len(customer["value"]) != 0:
@@ -995,6 +995,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
             if customer_name is None and len(customer_first_name) != 0:
                 customer_name = customer_first_name+" "+customer_last_name
+                customer_name = customer_name.strip()
 
             customer_group_pk_and_address_pk = []
             customer_group_pk_and_address_pk_branch_address = []
@@ -1002,7 +1003,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
             if len(customer_group_id_and_emails) != 0:
                 for customer_group_id_and_email in customer_group_id_and_emails:
 
-                    if customer_email == customer_group_id_and_email[1] and (customer_name).strip() == customer_group_id_and_email[2] :
+                    if customer_email == customer_group_id_and_email[1] and customer_name == customer_group_id_and_email[2] :
                         if customer_row_index == customer_group_id_and_email[4] and customer_website == customer_group_id_and_email[3]:
                         # map customer_group_pk and phone number for phones table
                             if phone:
