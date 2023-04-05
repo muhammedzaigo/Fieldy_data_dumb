@@ -209,7 +209,7 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
             {"same_organization_diffrent_user": same_organization_diffrent_user})
         bulk_insert_using_bulk_type(
             context, organized_customer_list, customer_list)
-
+    print("target_email --",target_email)
     if target_email:
         send_mail = threading.Thread(target=send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
             field_names, skip_data, invalid_data, duplicate_data, target_email))
