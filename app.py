@@ -160,7 +160,6 @@ def bulk_import_api():
 def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, json_format, duplicate_data, target_email):
     retrive_customer_data = get_bulk_retrive_using_tenant_id(
         context, json_format)
-    print(retrive_customer_data)
     organized_customer_list = []
     customer_list = []
     invalid_data = []
@@ -287,6 +286,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
 
     if context["which_user"] == CONTACT:
         skip = is_skip_data(row_index,context, customer_list, retrive_customer_data)
+        print("skip ",skip)
         customer_list = skip["customer_list"]
         if skip["skip"]:
             skip_data = customer_list
@@ -480,6 +480,7 @@ def skip_contact(row_index,customer_list, retrive_customer_data):
                         if retrive[2] == customer["value"]:
                             email = True
             if email:
+                print("email ",email)
                 skip = True
                 break
             if first_name and last_name and email:
