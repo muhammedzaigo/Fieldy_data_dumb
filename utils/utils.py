@@ -258,11 +258,11 @@ def is_valid_alphanumeric(text, min=1, max=256):
 
 def is_all_characters(text, min=1, max=256):
     response = {}
-    if len(str(text)) <= max:
-        response.update({"valid": True})
-    else:
+    if len(str(text)) > max:
         response.update(
             {"valid": False, "message": f"Invalid format or your provide greater than {max} characters"})
+    else:
+        response.update({"valid": True})
     return response
 
 

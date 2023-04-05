@@ -660,7 +660,10 @@ def split_customer_group_for_user(responce_dict, row_index):
                     responce_dict["users"].append(item)
                     contact_person_last_name["value"] = item["value"]
                     user_table_name_dict["value"] += ' '+item["value"]
+                    user_table_name_dict["value"] = user_table_name_dict["value"].strip()
+                    
                     contact_person_name["value"] += " "+item["value"]
+                    contact_person_name["value"] = contact_person_name["value"].strip()
 
                 if item['column_name'] == "email":
                     responce_dict["users"].append(item)
