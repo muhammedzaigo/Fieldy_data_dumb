@@ -472,11 +472,11 @@ def skip_contact(row_index,customer_list, retrive_customer_data):
             email = False
             for customer in remove_customer_list_is_delete_true:
                 if customer["column_name"] == "first_name":
-                    if retrive[30] == customer["value"]:
+                    if retrive[14] == customer["value"]:
                         first_name = True
                 if customer["column_name"] == "last_name":
                     if first_name:
-                        if retrive[31] == customer["value"]:
+                        if retrive[15] == customer["value"]:
                             last_name = True
                 if customer["column_name"] == "email":
                     if len(customer["value"]) != 0:
