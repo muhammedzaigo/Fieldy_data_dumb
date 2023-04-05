@@ -36,8 +36,6 @@ mail = Mail(app)
 def send_email(count, file_url, logo_url, target_email, filename=None):
     with app.app_context():
         try:
-            print("target_email -",target_email)
-            print("MAIL_SENDER -",str(os.getenv('MAIL_SENDER')))
             
             msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
                           recipients=[target_email])
@@ -55,7 +53,6 @@ def send_error_thread(message, traceback, logo_url):
     def send_error_email(message, traceback, logo_url):
         with app.app_context():
             try:
-                print(ERROR_TARGET_EMAIL)
                 msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
                               recipients=[str(ERROR_TARGET_EMAIL)])
                 msg.html = error_template(
@@ -163,7 +160,7 @@ def bulk_import_api():
 def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, json_format, duplicate_data, target_email):
     retrive_customer_data = get_bulk_retrive_using_tenant_id(
         context, json_format)
-
+    print(retrive_customer_data)
     organized_customer_list = []
     customer_list = []
     invalid_data = []
@@ -209,7 +206,6 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
             {"same_organization_diffrent_user": same_organization_diffrent_user})
         bulk_insert_using_bulk_type(
             context, organized_customer_list, customer_list)
-    print("target_email --",target_email)
     if target_email:
         send_mail = threading.Thread(target=send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
             field_names, skip_data, invalid_data, duplicate_data, target_email))
@@ -651,14 +647,11 @@ def send_mail_skip_data_and_invalid_data_convert_to_csv(field_names, skip_data, 
     field_names_copy = field_names.copy()
     field_names_copy.insert(0, "line Number")
     if len(skip_data) != 0:
-        print("skipped data")
         skip_data_count = len(skip_data)
         send_mail_skip_data = threading.Thread(
             target=send_skipped_data, args=(field_names_copy, skip_data, target_email, skip_data_count))
         send_mail_skip_data.start()
-    if len(invalid_data) != 0:
-        print("invalid data")
-        
+    if len(invalid_data) != 0:        
         invalid_data_count = len(invalid_data)
         send_mail_invalid_data = threading.Thread(
             target=send_invalid_data, args=(field_names_copy, invalid_data, target_email, invalid_data_count))
