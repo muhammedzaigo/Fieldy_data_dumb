@@ -997,7 +997,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
             if len(customer_group_id_and_emails) != 0:
                 for customer_group_id_and_email in customer_group_id_and_emails:
 
-                    if customer_email == customer_group_id_and_email[1] and customer_name == customer_group_id_and_email[2] :
+                    if customer_email == customer_group_id_and_email[1] and (customer_name).strip() == customer_group_id_and_email[2] :
                         if customer_row_index == customer_group_id_and_email[4] and customer_website == customer_group_id_and_email[3]:
                         # map customer_group_pk and phone number for phones table
                             if phone:
