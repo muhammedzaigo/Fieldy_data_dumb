@@ -559,7 +559,7 @@ def finding_which_data(row_index, user_type, table_name, column_name, validation
         valid = {"valid": True}
     if valid["valid"]:
         field_format_dict.update(
-            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": value, "valid": valid["valid"], "is_deleted": False, "line_number": row_index, "column_number": column_index})
+            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": str(value), "valid": valid["valid"], "is_deleted": False, "line_number": row_index, "column_number": column_index})
     else:
         message = valid["message"]
         field_format_dict.update(
