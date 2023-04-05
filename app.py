@@ -36,6 +36,9 @@ mail = Mail(app)
 def send_email(count, file_url, logo_url, target_email, filename=None):
     with app.app_context():
         try:
+            print("target_email -",target_email)
+            print("MAIL_SENDER -",str(os.getenv('MAIL_SENDER')))
+            
             msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
                           recipients=[target_email])
             with app.open_resource(file_url) as csv_file:
