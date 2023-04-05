@@ -490,12 +490,12 @@ def skip_contact(row_index,customer_list, retrive_customer_data):
             if email:
                 skip = True
                 break
-            if is_first_name and not is_last_name:
-                if first_name:
-                    skip = True
-                    break
             if is_first_name and is_email and not is_last_name:
                 if first_name and email:
+                    skip = True
+                    break
+            if is_first_name and not is_last_name:
+                if first_name:
                     skip = True
                     break
             if first_name and last_name and email:
