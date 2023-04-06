@@ -1144,7 +1144,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                                     users_data_and_customer_group.append(
                                         (users_name, users_first_name, users_last_name, users_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
                                 users_data_and_customer_group.append(
-                                    (customer_name, "", "", customer_email, "", "", customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
+                                    (customer_name, customer_name, "", customer_email, "", "", customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
 
                             if which_user == CONTACT:
                                 users_data_and_customer_group.append(
