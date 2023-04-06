@@ -5,10 +5,7 @@ import pandas as pd
 from flask import *
 import datetime
 import threading
-# from api.xlsx_to_csv import xlsx_convert_csv
-# from api.bulk_insert import bulk_insert
-# app.register_blueprint(xlsx_convert_csv, url_prefix='/api')
-# app.register_blueprint(bulk_insert, url_prefix='/api')
+import requests
 from flask_mail import Mail, Message
 from template.email import email_template, error_template
 import traceback
@@ -67,6 +64,32 @@ def send_error_thread(message, traceback, logo_url):
     return " Send error email"
 
 
+def api_call_for_cashe(TENANT_ID):
+    try:
+        def call_for_cashe(TENANT_ID):
+            params = {"type": TENANT_ID}
+            customers_cache_tenantId = requests.get(
+                'https://devgateway.getfieldy.com/z1/job/cache/flush', params=params)
+            quotes_customer_cache_tenantId = requests.get(
+                'https://devgateway.getfieldy.com/z1/accounting/cache/flush', params=params)
+            print("Api Call Successfully")
+            return "Api Call Successfully"
+        send_mail = threading.Thread(
+            target=call_for_cashe, args=(TENANT_ID,))
+        send_mail.start()
+        return "Api Called"
+    except Exception as e:
+        response = {
+            'message': 'File imported  Failed',
+            "error": {
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
+        }
+        send_error_thread(message=response["error"]["message"], traceback=response["error"]
+                          ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
+
+
 @app.route("/api/bulk_import", methods=['POST'])
 def bulk_import_api():
     if request.method == 'POST':
@@ -90,7 +113,7 @@ def bulk_import_api():
             which_user = currect_json_map_and_which_user_type_check["user_type"]
 
             remove_duplicates_sheet = remove_duplicates_in_sheet(
-                import_sheet["import_sheet"], which_user,json_format)
+                import_sheet["import_sheet"], which_user, json_format)
             cleaned_data = remove_duplicates_sheet["cleaned_data"]
             duplicate_data = remove_duplicates_sheet["removed_rows"]
             field_names = remove_duplicates_sheet["fieldnames"]
@@ -128,6 +151,7 @@ def bulk_import_api():
                                     field_names, [], [], remove_dupicate_name_dict, target_email)
 
             delete_csv_file(import_sheet)
+            api_call_for_cashe(TENANT_ID)
             response = {
                 'message': 'File imported successfully',
                 "data_count_context": data_count_context,
@@ -209,6 +233,7 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
     success_count = len(organized_customer_list["customer_group"])
     if len(same_organization_diffrent_user) != 0:
         success_count += len(same_organization_diffrent_user)
+        
     data_count_context = {
         "invalid_data": len(invalid_data),
         "duplicate_data": len(duplicate_data),
@@ -242,7 +267,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
         field_name = field_names[sheet_header_index]
         value = line[field_name]
         column_index = sheet_header_index
-        
+
         if value == ".":
             value = ""
 
@@ -393,19 +418,20 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
             organization_name = False
             user_create = False
             organization_full_name = ""
-
+            
             first_name = False
             last_name = False
             email = False
             phone_number = False
-            
+
             first_name_value = ""
             last_name_value = ""
             email_value = ""
             phone_number_value = ""
             job_title_value = ""
-            
+
             id_value = ""
+            
             for customer in remove_customer_list_is_delete_true:
                 if customer["column_name"] == "name":
                     if retrive[1] == customer["value"]:
@@ -413,59 +439,59 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
                         skip = True
 
                 if customer["table_name"] == "users":
-                    if organization_name:      
-                        if customer["column_name"] == "first_name":                             
+                    organization_user = True
+                    if organization_name:
+                        if customer["column_name"] == "first_name":
                             first_name_value = customer["value"]
                             if retrive[2] == customer["value"]:
                                 first_name = True
-                        
+
                         if customer["column_name"] == "last_name":
                             last_name_value = customer["value"]
                             if retrive[3] == customer["value"]:
                                 last_name = True
-                                
+
                         if customer["column_name"] == "email":
                             email_value = customer["value"]
                             if retrive[4] == customer["value"]:
                                 email = True
-                                
+
                         if customer["column_name"] == "phone":
                             phone_number_value = customer["value"]
                             if retrive[5] == customer["value"]:
                                 phone_number = True
-                                
+
                         if customer["column_name"] == "job_title":
-                            job_title_value = customer["value"] 
+                            job_title_value = customer["value"]
                         id_value = retrive[0]
-                        
+
                 if first_name and last_name and email and phone_number:
                     skip = True
                     break
-                
+
                 if email:
                     skip = True
                     break
-            
+
             if organization_name:
                 if "dupicate_name_in_csv" in context.keys():
                     user_create = True
-                    organization_user = True
                     same_organization_name_diffrent_user[1] = first_name_value
                     same_organization_name_diffrent_user[6] = id_value
                     organization_full_name = first_name_value
                 else:
                     if not first_name or not last_name or not email or not phone_number:
                         user_create = True
-                        organization_user = True
                         same_organization_name_diffrent_user[1] = first_name_value
                         same_organization_name_diffrent_user[6] = id_value
                         organization_full_name = first_name_value
-                        
-                if user_create:
+
+                if user_create and organization_user:
                     same_organization_name_diffrent_user[2] = last_name_value
-                    organization_full_name = organization_full_name +" "+last_name_value
-                    same_organization_name_diffrent_user[0] = organization_full_name.strip()
-                    
+                    organization_full_name = organization_full_name + " "+last_name_value
+                    same_organization_name_diffrent_user[0] = organization_full_name.strip(
+                    )
+
                     same_organization_name_diffrent_user[3] = email_value
                     same_organization_name_diffrent_user[4] = phone_number_value
                     same_organization_name_diffrent_user[5] = job_title_value
@@ -566,8 +592,8 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
 
                 if retrive[7] == customer["value"]:
                     raw_number = True
-                    
-            if raw_number :
+
+            if raw_number:
                 phone_number = True
 
             skip = skip_occer_cenarios_in_contact(

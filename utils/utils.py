@@ -134,19 +134,19 @@ def currect_address_map(json_format):
 def add_validation_fields(values, key, json_format):
     if values["table_slug"] == "line_1":
         json_format[key].update({"validation": validation(
-            max="255"), "field_type": "all_characters"})
+            max="256"), "field_type": "all_characters"})
 
     if values["table_slug"] == "line_2":
         json_format[key].update({"validation": validation(
-            max="150"), "field_type": "all_characters"})
+            max="256"), "field_type": "all_characters"})
 
     if values["table_slug"] == "state":
         json_format[key].update({"validation": validation(
-            max="255"), "field_type": "all_characters"})
+            max="45"), "field_type": "all_characters"})
 
     if values["table_slug"] == "city":
         json_format[key].update({"validation": validation(
-            max="255"), "field_type": "all_characters"})
+            max="256"), "field_type": "all_characters"})
 
     if values["table_slug"] == "zip_code":
         json_format[key].update({"validation": validation(
@@ -154,7 +154,7 @@ def add_validation_fields(values, key, json_format):
 
     if values["table_slug"] == "email":
         json_format[key].update({"validation": validation(
-            min="64", max="255"), "field_type": "email"})
+            min="64", max="256"), "field_type": "email"})
 
     if values["table_slug"] == "number":
         json_format[key].update({"validation": validation(
