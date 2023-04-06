@@ -240,13 +240,9 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
         validation = json_format[key]['validation']
         field_type = json_format[key]['field_type']
         sheet_header_index = json_format[key]['sheet_header_index']
+        field_name = field_names[sheet_header_index]
+        value = line[field_name]
         
-
-        try:
-            field_name = field_names[sheet_header_index]
-            value = line[field_name]
-        except:
-            pass
         if value == ".":
             value = ""
 
