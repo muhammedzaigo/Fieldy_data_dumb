@@ -335,8 +335,8 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
     not_branch_addresses = False
     not_address = False
     remove_customer_list_is_delete_true = []
-    not_address_fields = False
-    not_branch_addresses_fields = False
+    not_address_fields = True
+    not_branch_addresses_fields = True
 
     for customer in customer_list:
         if customer["column_name"] == "name" and customer["table_name"] == "customer_group":
@@ -344,27 +344,23 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
 
         if customer["table_name"] == "addresses":
             if customer["column_name"] == "line_1":
+                not_address_fields = False
                 if len(str(customer["value"])) == 0:
                     not_address = True
                     customer["is_deleted"] = True
                 else:
-                    not_address_fields = False
                     customer_list.append(add_new_field(
                         "organization", "addresses", "row_index", row_index, row_index))
-            else:
-                not_address_fields = True
 
         if customer["table_name"] == "branch_addresses":
             if customer["column_name"] == "line_1":
+                not_branch_addresses_fields = False
                 if len(str(customer["value"])) == 0:
                     not_branch_addresses = True
                     customer["is_deleted"] = True
                 else:
-                    not_branch_addresses_fields = False
                     customer_list.append(add_new_field(
                         "organization", "branch_addresses", "row_index", row_index, row_index))
-            else:
-                not_branch_addresses_fields = True
 
         if customer["column_name"] == "number" and customer["table_name"] == "phones":
             if len(str(customer["value"])) == 0:
@@ -460,7 +456,7 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
     skip = False
     name = False
     not_address = False
-    not_address_field = False
+    not_address_field = True
     remove_customer_list_is_delete_true = []
     for customer in customer_list:
         if customer["column_name"] == "first_name" and customer["table_name"] == "customer_group":
@@ -468,15 +464,13 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
 
         if customer["table_name"] == "branch_addresses":
             if customer["column_name"] == "line_1":
+                not_address_field = False
                 if len(str(customer["value"])) == 0:
                     not_address = True
                     customer["is_deleted"] = True
                 else:
-                    not_address_field = False
                     customer_list.append(add_new_field(
                         "organization", "branch_addresses", "row_index", row_index, row_index))
-            else:
-                not_address_field = True
 
         if customer["column_name"] == "number" and customer["table_name"] == "phones":
             if len(str(customer["value"])) == 0:
@@ -489,7 +483,7 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
 
     if not_address_field:
         for customer in customer_list:
-            if customer["table_name"] == "addresses":
+            if customer["table_name"] == "branch_addresses":
                 customer["is_deleted"] = True
 
     for customer in customer_list:
