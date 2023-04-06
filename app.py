@@ -232,7 +232,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
     same_organization_diffrent_user = None
     json_format_keys = json_format.keys()
     invalid = False
-    for column_index, key in enumerate(json_format_keys):
+    for key in json_format_keys:
 
         user_type = json_format[key]['entity']
         table_name = json_format[key]['parent']
@@ -242,6 +242,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
         sheet_header_index = json_format[key]['sheet_header_index']
         field_name = field_names[sheet_header_index]
         value = line[field_name]
+        column_index = sheet_header_index
         
         if value == ".":
             value = ""
