@@ -396,47 +396,84 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
     if name and not skip:
         for retrive in retrive_customer_data:
             organization_name = False
-            organization_first_name = False
+            user_create = False
             organization_full_name = ""
 
+            first_name = False
+            last_name = False
+            email = False
+            phone_number = False
+            
+            first_name_value = ""
+            last_name_value = ""
+            email_value = ""
+            phone_number_value = ""
+            job_title_value = ""
+            
+            id_value = ""
             for customer in remove_customer_list_is_delete_true:
                 if customer["column_name"] == "name":
                     if retrive[1] == customer["value"]:
                         organization_name = True
                         skip = True
 
-                if customer["column_name"] == "first_name" and customer["table_name"] == "users":
-                    if organization_name:
-
-                        if "dupicate_name_in_csv" in context.keys():
-                            organization_first_name = True
-                            organization_user = True
-                            same_organization_name_diffrent_user[1] = customer["value"]
-                            same_organization_name_diffrent_user[6] = retrive[0]
-                            organization_full_name = customer["value"]
-                        else:
-                            if retrive[27] != customer["value"]:
-                                organization_first_name = True
-                                organization_user = True
-                                same_organization_name_diffrent_user[1] = customer["value"]
-                                same_organization_name_diffrent_user[6] = retrive[0]
-                                organization_full_name = customer["value"]
-
-                if organization_first_name:
-                    if customer["column_name"] == "last_name" and customer["table_name"] == "users":
-                        same_organization_name_diffrent_user[2] = customer["value"]
-                        organization_full_name = organization_full_name + \
-                            " "+customer["value"]
-                        same_organization_name_diffrent_user[0] = organization_full_name
-
-                    if customer["column_name"] == "email" and customer["table_name"] == "users":
-                        same_organization_name_diffrent_user[3] = customer["value"]
-
-                    if customer["column_name"] == "phone" and customer["table_name"] == "users":
-                        same_organization_name_diffrent_user[4] = customer["value"]
-
-                    if customer["column_name"] == "job_title" and customer["table_name"] == "users":
-                        same_organization_name_diffrent_user[5] = customer["value"]
+                if customer["table_name"] == "users":
+                    if organization_name:      
+                        if customer["column_name"] == "first_name":                             
+                            first_name_value = customer["value"]
+                            if retrive[2] == customer["value"]:
+                                first_name = True
+                        
+                        if customer["column_name"] == "last_name":
+                            last_name_value = customer["value"]
+                            if retrive[3] == customer["value"]:
+                                last_name = True
+                                
+                        if customer["column_name"] == "email":
+                            email_value = customer["value"]
+                            if retrive[4] == customer["value"]:
+                                email = True
+                                
+                        if customer["column_name"] == "phone":
+                            phone_number_value = customer["value"]
+                            if retrive[5] == customer["value"]:
+                                phone_number = True
+                                
+                        if customer["column_name"] == "job_title":
+                            job_title_value = customer["value"] 
+                        id_value = retrive[0]
+                        
+                if first_name and last_name and email and phone_number:
+                    skip = True
+                    break
+                
+                if email:
+                    skip = True
+                    break
+            
+            if organization_name:
+                if "dupicate_name_in_csv" in context.keys():
+                    user_create = True
+                    organization_user = True
+                    same_organization_name_diffrent_user[1] = first_name_value
+                    same_organization_name_diffrent_user[6] = id_value
+                    organization_full_name = first_name_value
+                else:
+                    if not first_name or not last_name or not email or not phone_number:
+                        user_create = True
+                        organization_user = True
+                        same_organization_name_diffrent_user[1] = first_name_value
+                        same_organization_name_diffrent_user[6] = id_value
+                        organization_full_name = first_name_value
+                        
+                if user_create:
+                    same_organization_name_diffrent_user[2] = last_name_value
+                    organization_full_name = organization_full_name +" "+last_name_value
+                    same_organization_name_diffrent_user[0] = organization_full_name.strip()
+                    
+                    same_organization_name_diffrent_user[3] = email_value
+                    same_organization_name_diffrent_user[4] = phone_number_value
+                    same_organization_name_diffrent_user[5] = job_title_value
 
             if skip:
                 break
@@ -505,6 +542,7 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
 
             is_phone_number = False
             phone_number = False
+            raw_number = False
 
             for customer in remove_customer_list_is_delete_true:
                 if customer["column_name"] == "first_name":
@@ -519,17 +557,23 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
                 if customer["column_name"] == "number":
                     is_phone_number = True
 
-                if retrive[14] == customer["value"]:
+                if retrive[2] == customer["value"]:
                     first_name = True
 
-                if retrive[15] == customer["value"]:
+                if retrive[3] == customer["value"]:
                     last_name = True
 
-                if retrive[2] == customer["value"]:
+                if retrive[4] == customer["value"]:
                     email = True
 
-                if retrive[66] == customer["value"]:
+                if retrive[6] == customer["value"]:
                     phone_number = True
+
+                if retrive[7] == customer["value"]:
+                    raw_number = True
+                    
+            if raw_number :
+                phone_number = True
 
             skip = skip_occer_cenarios_in_contact(
                 is_first_name, first_name, is_last_name, last_name, is_email, email, is_phone_number, phone_number)
