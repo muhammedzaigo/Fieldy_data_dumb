@@ -434,18 +434,29 @@ def import_sheets(file):
         csv_filename = ""
         XLSX = False
     except:
-        df = pd.read_excel(file, sheet_name=None)
+        # df = pd.read_excel(file, sheet_name=None)
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        for sheet_name, sheet_data in df.items():
-            if not os.path.exists("sheets"):
-                os.mkdir("sheets")
-            csv_filename = f"sheets/{sheet_name}_{timestamp}.csv"
-            sheet_data.to_csv(csv_filename, index=False)
-            with open(csv_filename, 'rb') as csv_file:
+        # for sheet_name, sheet_data in df.items():
+        #     if not os.path.exists("sheets"):
+        #         os.mkdir("sheets")
+        #     csv_filename = f"sheets/{sheet_name}_{timestamp}.csv"
+        #     sheet_data.to_csv(csv_filename, index=False)
+        #     with open(csv_filename, 'rb') as csv_file:
+        #         encoding_type = chardet.detect(csv_file.read())
+        #     with open(csv_filename, 'r', encoding=encoding_type['encoding']) as csv_file:
+        #         import_sheet = csv_file.read()
+        workbook = pd.ExcelFile(file)
+        sheet_name = workbook.sheet_names[0]
+        sheet_data = workbook.parse(sheet_name)
+        if not os.path.exists("sheets"):
+            os.mkdir("sheets")
+        csv_filename = f"sheets/{sheet_name}_{timestamp}.csv"
+        sheet_data.to_csv(csv_filename, index=False)
+        with open(csv_filename, 'rb') as csv_file:
                 encoding_type = chardet.detect(csv_file.read())
-            with open(csv_filename, 'r', encoding=encoding_type['encoding']) as csv_file:
+        with open(csv_filename, 'r', encoding=encoding_type['encoding']) as csv_file:
                 import_sheet = csv_file.read()
-            XLSX = True
+        XLSX = True
 
     return {
         "csv_filename": csv_filename,
