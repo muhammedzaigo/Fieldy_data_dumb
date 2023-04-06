@@ -106,32 +106,31 @@ def bulk_import_api():
 
             data_count_context = organizationed_and_skip_sheet_data["data_count_context"]
 
-            # if which_user == ORGAZANAIZATION:
-            #     if "remove_dupicate_name_dict" in remove_duplicates_sheet.keys():
-            #         remove_dupicate_name_dict = remove_duplicates_sheet["remove_dupicate_name_dict"]
+            if which_user == ORGAZANAIZATION:
+                if "remove_dupicate_name_dict" in remove_duplicates_sheet.keys():
+                    remove_dupicate_name_dict = remove_duplicates_sheet["remove_dupicate_name_dict"]
 
-            #         if organizationed_and_skip_sheet_data["success"]:
-            #             if len(remove_dupicate_name_dict) != 0:
+                    if organizationed_and_skip_sheet_data["success"]:
+                        if len(remove_dupicate_name_dict) != 0:
 
-            #                 user_first_name = False
-            #                 for key, value in json_format.items():
-            #                     if value["parent"] == "users" and value["table_slug"] == "first_name":
-            #                         user_first_name = True
-            #                         break
+                            user_first_name = False
+                            for key, value in json_format.items():
+                                if value["parent"] == "users" and value["table_slug"] == "first_name":
+                                    user_first_name = True
+                                    break
 
-            #                 if user_first_name:
-            #                     context.update({"dupicate_name_in_csv": True})
-            #                     organizationed_and_skip_sheet_data = organizing_all_sheets_using_json_format(
-            #                         context, remove_dupicate_name_dict, field_names, json_format, [], None)
-            #                 else:
-            #                     send_mail_skip_data_and_invalid_data_convert_to_csv(
-            #                         field_names, [], [], remove_dupicate_name_dict, target_email)
+                            if user_first_name:
+                                context.update({"dupicate_name_in_csv": True})
+                                organizationed_and_skip_sheet_data = organizing_all_sheets_using_json_format(
+                                    context, remove_dupicate_name_dict, field_names, json_format, [], None)
+                            else:
+                                send_mail_skip_data_and_invalid_data_convert_to_csv(
+                                    field_names, [], [], remove_dupicate_name_dict, target_email)
 
             delete_csv_file(import_sheet)
             response = {
                 'message': 'File imported successfully',
                 "data_count_context": data_count_context,
-                "json_format":json_format
             }
             response = make_response(jsonify(response), 200)
             response.headers["Content-Type"] = "application/json"
