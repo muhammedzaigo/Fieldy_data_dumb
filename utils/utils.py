@@ -321,9 +321,9 @@ def add_column_values(val, table_name, TENANT_ID, bulk_insert_id, created_by):
     return val
 
 
-def remove_duplicates_in_sheet(sheet, which_user):
+def remove_duplicates_in_sheet(sheet, which_user,json_format):
     if which_user == ORGAZANAIZATION:
-        context = organization_remove_duplicates_in_sheet(sheet)
+        context = organization_remove_duplicates_in_sheet(sheet,json_format)
     else:
         context = contact_remove_duplicates_in_sheet(sheet)
     return context
@@ -373,7 +373,12 @@ def contact_remove_duplicates_in_sheet(read_sheet):
     return context
 
 
-def organization_remove_duplicates_in_sheet(read_sheet):
+def organization_remove_duplicates_in_sheet(read_sheet,json_format):
+    uniqe_fieldname = "organization_name"
+    for key,value in json_format.items():
+        if value["table_slug"] == "name":
+            uniqe_fieldname = value["sheet_header_name"]
+            uniqe_fieldname = uniqe_fieldname.lower()
     df = pd.read_csv(io.StringIO(read_sheet))
     df.columns = map(str.lower, df.columns)
     df = df.fillna('')
@@ -388,12 +393,8 @@ def organization_remove_duplicates_in_sheet(read_sheet):
         removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
         removed_data = removed_data.dropna(how='all')
 
-        cleaned_data_dict_for_get_fieldname = cleaned_data.to_dict(
-            orient='records')
-        fieldnames = list(cleaned_data_dict_for_get_fieldname[0].keys())
-
         dupicate_name = organization_dupicate_name(
-            df, cleaned_data, fieldnames)
+            df, cleaned_data, uniqe_fieldname)
         cleaned_data = dupicate_name["cleaned_data"]
         remove_dupicate_name = dupicate_name["name_removed_data"]
     else:
@@ -401,12 +402,8 @@ def organization_remove_duplicates_in_sheet(read_sheet):
         removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
         removed_data = removed_data.dropna(how='all')
 
-        cleaned_data_dict_for_get_fieldname = cleaned_data.to_dict(
-            orient='records')
-        fieldnames = list(cleaned_data_dict_for_get_fieldname[0].keys())
-
         dupicate_name = organization_dupicate_name(
-            df, cleaned_data, fieldnames)
+            df, cleaned_data, uniqe_fieldname)
         cleaned_data = dupicate_name["cleaned_data"]
         remove_dupicate_name = dupicate_name["name_removed_data"]
 
@@ -419,9 +416,9 @@ def organization_remove_duplicates_in_sheet(read_sheet):
     return context
 
 
-def organization_dupicate_name(df, cleaned_data, fieldnames):
+def organization_dupicate_name(df, cleaned_data, uniqe_fieldname):
     cleaned_data = df.drop_duplicates(
-        subset=[fieldnames[0]], keep='first')
+        subset=[uniqe_fieldname], keep='first')
     name_removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
     return {"cleaned_data": cleaned_data, "name_removed_data": name_removed_data}
 
