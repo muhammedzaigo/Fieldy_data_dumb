@@ -219,8 +219,8 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
 
     try:
         if which_user == ORGAZANAIZATION:
-            qry = '''SELECT `customer_group`.*,`users`.* FROM `customer_group`
-            JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group`
+            qry = '''SELECT `customer_group`.*,`users`.*,`phones`.* FROM `customer_group`
+            LEFT JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group` LEFT JOIN `phones` ON `phones`.`phoneable_id`=`customer_group`.`id_customer_group` 
             WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `customer_group`.`customer_type` = %s'''
             val = (TENANT_ID, TENANT_ID, "company_customer")
 
@@ -229,8 +229,8 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
                 val = (TENANT_ID, "company_customer")
 
         if which_user == CONTACT:
-            qry = '''SELECT `customer_group`.*,`users`.* FROM `customer_group`
-            JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group`
+            qry = '''SELECT `customer_group`.*,`users`.*,`phones`.* FROM `customer_group`
+            LEFT JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group` LEFT JOIN `phones` ON `phones`.`phoneable_id`=`customer_group`.`id_customer_group` 
             WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `customer_group`.`customer_type` = %s'''
             val = (TENANT_ID, TENANT_ID, "contact_customer")
 
