@@ -704,6 +704,7 @@ def finding_which_data(row_index, user_type, table_name, column_name, validation
     return field_format_dict
 
 
+
 def check_validation(valid, validation, field_type, value):
     min = int(validation["min"]) if len(validation["min"]) != 0 else 1
     max = int(validation["max"]) if len(validation["max"]) != 0 else 256
