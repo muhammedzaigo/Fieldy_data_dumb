@@ -198,7 +198,7 @@ def organizing_sheets_using_json_format(context, cleaned_data, field_names, json
     data_count_context = {
         "invalid_data": len(invalid_data),
         "duplicate_data": len(duplicate_data),
-        "skip_count": len(skip_data),
+        "skip_data": len(skip_data),
         "success_count": len(organized_customer_list["customer_group"]),
     }
     return {
