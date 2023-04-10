@@ -82,7 +82,7 @@ def bulk_import_api():
             context.update(
                 {"same_organization_diffrent_user": same_org_organizationed_data_id_dict["same_org_organizationed_data_id_dict"]})
             data_count_context["success_count"] += same_org_organizationed_data_id_dict["success_count"]
-            data_count_context["skip_count"] += same_org_organizationed_data_id_dict["skip_count"]
+            data_count_context["skip_data"] += same_org_organizationed_data_id_dict["skip_data"]
 
             bulk_insert_user_and_address(
                 context, customer_group_addresess_list, customer_list)
