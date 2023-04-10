@@ -12,9 +12,9 @@ import traceback
 from flask_cors import CORS
 
 app = Flask(__name__, instance_relative_config=True)
+
 CORS(app)
 load_dotenv()
-
 app.secret_key = str(os.getenv('SECRET_KEY'))
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -28,66 +28,6 @@ if ERROR_TARGET_EMAIL is None:
     ERROR_TARGET_EMAIL = "mrahil7510@gmail.com"
 
 mail = Mail(app)
-
-
-def send_email(count, file_url, logo_url, target_email, filename=None):
-    with app.app_context():
-        try:
-
-            msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
-                          recipients=[target_email])
-            with app.open_resource(file_url) as csv_file:
-                msg.attach(filename=filename,
-                           content_type="text/csv", data=csv_file.read())
-            msg.html = email_template(count=count, logo_url=logo_url)
-            mail.send(msg)
-            return 'Email sent!'
-        except Exception as e:
-            return f" email : {str(e)}"
-
-
-def send_error_thread(message, traceback, logo_url):
-    def send_error_email(message, traceback, logo_url):
-        with app.app_context():
-            try:
-                msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
-                              recipients=[str(ERROR_TARGET_EMAIL)])
-                msg.html = error_template(
-                    message=message, traceback=traceback, logo_url=logo_url)
-                mail.send(msg)
-                return 'Email sent!'
-            except Exception as e:
-                return f" email : {str(e)}"
-    send_mail = threading.Thread(
-        target=send_error_email, args=(message, traceback, logo_url))
-    send_mail.start()
-    return " Send error email"
-
-
-def api_call_for_cashe(TENANT_ID):
-    try:
-        def call_for_cashe(TENANT_ID):
-            params = {"type": TENANT_ID}
-            customers_cache_tenantId = requests.get(
-                'https://devgateway.getfieldy.com/z1/job/cache/flush', params=params)
-            quotes_customer_cache_tenantId = requests.get(
-                'https://devgateway.getfieldy.com/z1/accounting/cache/flush', params=params)
-            print("Api Call Successfully")
-            return "Api Call Successfully"
-        send_mail = threading.Thread(
-            target=call_for_cashe, args=(TENANT_ID,))
-        send_mail.start()
-        return "Api Called"
-    except Exception as e:
-        response = {
-            'message': 'File imported  Failed',
-            "error": {
-                "message": str(e),
-                "traceback": traceback.format_exc()
-            }
-        }
-        send_error_thread(message=response["error"]["message"], traceback=response["error"]
-                          ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
 
 
 @app.route("/api/bulk_import", methods=['POST'])
@@ -105,18 +45,19 @@ def bulk_import_api():
                 return make_response(jsonify({'message': 'tenant_id, json_format, created_by is required fields'}), 400)
 
             import_sheet = import_sheets(file)
-
             json_format = json.loads(json_format)
-            currect_json_map_and_which_user_type_check = currect_json_map_and_which_user_type(
+            currect_json_map = currect_json_map_and_which_user_type(
                 json_format)
-            json_format = currect_json_map_and_which_user_type_check["json_format"]
-            which_user = currect_json_map_and_which_user_type_check["user_type"]
+            json_format = currect_json_map["json_format"]
+            which_user = currect_json_map["user_type"]
 
-            remove_duplicates_sheet = remove_duplicates_in_sheet(
+            remove_duplicates = remove_duplicates_in_sheet(
                 import_sheet["import_sheet"], which_user, json_format)
-            cleaned_data = remove_duplicates_sheet["cleaned_data"]
-            duplicate_data = remove_duplicates_sheet["removed_rows"]
-            field_names = remove_duplicates_sheet["fieldnames"]
+
+            cleaned_data = remove_duplicates["cleaned_data"]
+            duplicate_data = remove_duplicates["removed_rows"]
+            field_names = remove_duplicates["fieldnames"]
+
             context = {
                 "TENANT_ID": TENANT_ID,
                 "which_user": which_user,
@@ -124,37 +65,33 @@ def bulk_import_api():
                 "filename": file.filename
             }
 
-            organizationed_and_skip_sheet_data = organizing_all_sheets_using_json_format(
+            organizationed_data = organizing_sheets_using_json_format(
                 context, cleaned_data, field_names, json_format, duplicate_data, target_email)
-
-            data_count_context = organizationed_and_skip_sheet_data["data_count_context"]
+            data_count_context = organizationed_data["data_count_context"]
+            customer_group_addresess_list = organizationed_data["customer_group_addresess_list"]
+            customer_list = organizationed_data["customer_list"]
+            same_org_organizationed_data = organizationed_data["same_org_diffrent_user"]
 
             if which_user == ORGAZANAIZATION:
-                if "remove_dupicate_name_dict" in remove_duplicates_sheet.keys():
-                    remove_dupicate_name_dict = remove_duplicates_sheet["remove_dupicate_name_dict"]
+                same_org_organizationed_data = duplicate_organization_name_in_sheet(
+                    context, field_names, same_org_organizationed_data, remove_duplicates, organizationed_data, json_format, target_email)
 
-                    if organizationed_and_skip_sheet_data["success"]:
-                        if len(remove_dupicate_name_dict) != 0:
+            same_org_organizationed_data_id_dict = same_org_organizationed_data_id_convert_dict(
+                same_org_organizationed_data)
 
-                            user_first_name = False
-                            for key, value in json_format.items():
-                                if value["parent"] == "users" and value["table_slug"] == "first_name":
-                                    user_first_name = True
-                                    break
+            context.update(
+                {"same_organization_diffrent_user": same_org_organizationed_data_id_dict["same_org_organizationed_data_id_dict"]})
+            data_count_context["success_count"] += same_org_organizationed_data_id_dict["success_count"]
+            data_count_context["skip_count"] += same_org_organizationed_data_id_dict["skip_count"]
 
-                            if user_first_name:
-                                context.update({"dupicate_name_in_csv": True})
-                                organizationed_and_skip_sheet_data = organizing_all_sheets_using_json_format(
-                                    context, remove_dupicate_name_dict, field_names, json_format, [], None)
-                            else:
-                                send_mail_skip_data_and_invalid_data_convert_to_csv(
-                                    field_names, [], [], remove_dupicate_name_dict, target_email)
+            bulk_insert_user_and_address(
+                context, customer_group_addresess_list, customer_list)
 
             delete_csv_file(import_sheet)
             api_call_for_cashe(TENANT_ID)
             response = {
                 'message': 'File imported successfully',
-                "data_count_context": data_count_context,
+                "data_count_context": data_count_context
             }
             response = make_response(jsonify(response), 200)
             response.headers["Content-Type"] = "application/json"
@@ -177,9 +114,103 @@ def bulk_import_api():
 # -------------------------------- step 1 --------------------------------
 
 
-def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, json_format, duplicate_data, target_email):
+def same_org_organizationed_data_id_convert_dict(same_org_organizationed_data):
+    same_org_organizationed_data_id_dict = {}
+    success_count = 0
+    skip_count = 0
+    email_list = []
+    for i in same_org_organizationed_data:
+        if i[6] not in same_org_organizationed_data_id_dict:
+            same_org_organizationed_data_id_dict[i[6]] = []
+        if i[3] != None:
+            if i[3] not in email_list:
+                email_list.append(i[3])
+                success_count += 1
+                same_org_organizationed_data_id_dict[i[6]].append(i)
+            else:
+                skip_count += 1
+        else:
+            success_count += 1
+            same_org_organizationed_data_id_dict[i[6]].append(i)
+
+    return {"same_org_organizationed_data_id_dict": same_org_organizationed_data_id_dict, "success_count": success_count, "skip_count": skip_count}
+
+
+def duplicate_organization_name_in_sheet(context, field_names, same_org_organizationed_data, remove_duplicates, organizationed_data, json_format, target_email):
+    if "remove_dupicate_name_dict" in remove_duplicates.keys():
+        remove_dupicate_name_dict = remove_duplicates["remove_dupicate_name_dict"]
+
+        if organizationed_data["success"]:
+            if len(remove_dupicate_name_dict) != 0:
+
+                user_first_name = False
+                for key, value in json_format.items():
+                    if value["parent"] == "users" and value["table_slug"] == "first_name":
+                        user_first_name = True
+                        break
+
+                if user_first_name:
+                    context.update({"dupicate_name_in_csv": True})
+                    duplicate_organizationed_data = organizing_sheets_using_json_format(
+                        context, remove_dupicate_name_dict, field_names, json_format, [], None)
+
+                    for i in duplicate_organizationed_data["same_org_diffrent_user"]:
+                        same_org_organizationed_data.append(i)
+                else:
+                    send_mail_skip_data_and_invalid_data_convert_to_csv(
+                        field_names, [], [], remove_dupicate_name_dict, target_email)
+    return same_org_organizationed_data
+
+
+def organizing_sheets_using_json_format(context, cleaned_data, field_names, json_format, duplicate_data, target_email):
     retrive_customer_data = get_bulk_retrive_using_tenant_id(
         context, json_format)
+    responce_read_data_by_rows = read_data_row_by_rows(
+        cleaned_data, field_names, json_format, context, retrive_customer_data)
+
+    organized_customer_list = responce_read_data_by_rows["organized_customer_list"]
+    customer_list = responce_read_data_by_rows["customer_list"]
+    invalid_data = responce_read_data_by_rows["invalid_data"]
+    skip_data = responce_read_data_by_rows["skip_data"]
+    same_org_diffrent_user = responce_read_data_by_rows["same_organization_diffrent_user"]
+
+    tables_name = get_table_names_in_json_condition(json_format)
+    bulk_insert_id = get_bulk_insert_id(context, insert=True)
+    context.update({'bulk_insert_id': bulk_insert_id})
+    organized_customer_list = table_name_use_suparat_all_data(
+        organized_customer_list, tables_name)
+
+    if context["which_user"] == CONTACT:
+        context.update({"custemer_type": "contact_customer"})
+        customer_group_addresess_list = bulk_insert_function(
+            organized_customer_list, context)
+
+    if context["which_user"] == ORGAZANAIZATION:
+        context.update({"custemer_type": "company_customer"})
+        customer_group_addresess_list = bulk_insert_function(
+            organized_customer_list, context)
+
+    if target_email:
+        send_mail = threading.Thread(target=send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
+            field_names, skip_data, invalid_data, duplicate_data, target_email))
+        send_mail.start()
+
+    data_count_context = {
+        "invalid_data": len(invalid_data),
+        "duplicate_data": len(duplicate_data),
+        "skip_count": len(skip_data),
+        "success_count": len(organized_customer_list["customer_group"]),
+    }
+    return {
+        "data_count_context": data_count_context,
+        "success": True,
+        "customer_group_addresess_list": customer_group_addresess_list,
+        "customer_list": customer_list,
+        "same_org_diffrent_user": same_org_diffrent_user
+    }
+
+
+def read_data_row_by_rows(cleaned_data, field_names, json_format, context, retrive_customer_data):
     organized_customer_list = []
     customer_list = []
     invalid_data = []
@@ -208,54 +239,36 @@ def organizing_all_sheets_using_json_format(context, cleaned_data, field_names, 
             same_organization_diffrent_user.append(
                 field_type["same_organization_diffrent_user"])
 
-    tables_name = get_table_names_in_json_condition(json_format)
-    bulk_insert_id = get_bulk_insert_id(context, insert=True)
-    context.update({'bulk_insert_id': bulk_insert_id})
-    organized_customer_list = table_name_use_suparat_all_data(
-        organized_customer_list, tables_name)
-
-    if context["which_user"] == CONTACT:
-        context.update({"custemer_type": "contact_customer"})
-        bulk_insert_using_bulk_type(
-            context, organized_customer_list, customer_list)
-
-    if context["which_user"] == ORGAZANAIZATION:
-        context.update({"custemer_type": "company_customer"})
-        context.update(
-            {"same_organization_diffrent_user": same_organization_diffrent_user})
-        bulk_insert_using_bulk_type(
-            context, organized_customer_list, customer_list)
-    if target_email:
-        send_mail = threading.Thread(target=send_mail_skip_data_and_invalid_data_convert_to_csv, args=(
-            field_names, skip_data, invalid_data, duplicate_data, target_email))
-        send_mail.start()
-
-    success_count = len(organized_customer_list["customer_group"])
-    if len(same_organization_diffrent_user) != 0:
-        success_count += len(same_organization_diffrent_user)
-        
-    data_count_context = {
-        "invalid_data": len(invalid_data),
-        "duplicate_data": len(duplicate_data),
-        "skip_data": len(skip_data),
-        "success_count": success_count,
-
-    }
-    return {
-        "data_count_context": data_count_context,
-        "success": True,
-    }
+    if "dupicate_name_in_csv" in context.keys():
+        context = {
+            "organized_customer_list": [],
+            "customer_list": [],
+            "invalid_data": [],
+            "skip_data": [],
+            "same_organization_diffrent_user": same_organization_diffrent_user
+        }
+    else:
+        context = {
+            "organized_customer_list": organized_customer_list,
+            "customer_list": customer_list,
+            "invalid_data": invalid_data,
+            "skip_data": skip_data,
+            "same_organization_diffrent_user": same_organization_diffrent_user
+        }
+    return context
 
 
 def divide_to_field_type_with_json_format(row_index, line, field_names, json_format, context, retrive_customer_data):
 
     customer_list = []
     organized_customer_list = []
-    invalid_data = []
     skip_data = []
     same_organization_diffrent_user = None
-    json_format_keys = json_format.keys()
+
+    invalid_data = []
     invalid = False
+
+    json_format_keys = json_format.keys()
     for key in json_format_keys:
 
         user_type = json_format[key]['entity']
@@ -263,17 +276,13 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
         column_name = json_format[key]['table_slug']
         validation = json_format[key]['validation']
         field_type = json_format[key]['field_type']
-        sheet_header_index = json_format[key]['sheet_header_index']
-        field_name = field_names[sheet_header_index]
+        column_index = json_format[key]['sheet_header_index']
+        field_name = field_names[column_index]
         value = line[field_name]
-        column_index = sheet_header_index
-
-        if value == ".":
-            value = ""
 
         if user_type == "contact":
-            field_format_return_dict = finding_which_data(row_index,
-                                                          user_type, table_name, column_name, validation, field_type, value, column_index)
+            field_format_return_dict = finding_which_data(row_index, column_index,
+                                                          user_type, table_name, column_name, validation, field_type, value)
             if field_format_return_dict["valid"]:
                 customer_list.append((field_format_return_dict))
                 invalid_data.append((field_format_return_dict))
@@ -286,8 +295,8 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
                 customer_list.append((field_format_return_dict_copy))
 
         if user_type == "organization":
-            field_format_return_dict = finding_which_data(row_index,
-                                                          user_type, table_name, column_name, validation, field_type, value, column_index)
+            field_format_return_dict = finding_which_data(row_index, column_index,
+                                                          user_type, table_name, column_name, validation, field_type, value)
             if field_format_return_dict["valid"]:
                 customer_list.append((field_format_return_dict))
                 invalid_data.append((field_format_return_dict))
@@ -351,16 +360,74 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
     same_organization_name_diffrent_user = ["", "", "", "", "", "", ""]
     organization_user = False
     skip = False
-    name = False
+    is_name = False
     not_branch_addresses = False
     not_address = False
     remove_customer_list_is_delete_true = []
     not_address_fields = True
     not_branch_addresses_fields = True
 
+    organization_user_check_list = []
+    name = None
+    email = None
     for customer in customer_list:
         if customer["column_name"] == "name" and customer["table_name"] == "customer_group":
-            name = len(str(customer["value"])) != 0
+            if len(str(customer["value"])) != 0:
+                is_name = True
+                name = str(customer["value"])
+
+        if customer["column_name"] == "first_name" and customer["table_name"] == "users":
+            if len(str(customer["value"])) != 0:
+                organization_user_check_list.insert(0, str(customer["value"]))
+                same_organization_name_diffrent_user[1] = str(
+                    customer["value"])
+            else:
+                organization_user_check_list.insert(0, None)
+
+        if customer["column_name"] == "last_name" and customer["table_name"] == "users":
+            if len(str(customer["value"])) != 0:
+                organization_user_check_list.insert(1, str(customer["value"]))
+                same_organization_name_diffrent_user[2] = str(
+                    customer["value"])
+
+            else:
+                organization_user_check_list.insert(1, None)
+
+        if customer["column_name"] == "email" and customer["table_name"] == "users":
+            if len(str(customer["value"])) != 0:
+                organization_user_check_list.insert(2, str(customer["value"]))
+                same_organization_name_diffrent_user[3] = str(
+                    customer["value"])
+                email = str(customer["value"])
+            else:
+                organization_user_check_list.insert(2, None)
+
+        if customer["column_name"] == "phone" and customer["table_name"] == "users":
+            if len(str(customer["value"])) != 0:
+                organization_user_check_list.insert(3, str(customer["value"]))
+                same_organization_name_diffrent_user[4] = str(
+                    customer["value"])
+            else:
+                organization_user_check_list.insert(3, None)
+
+        if customer["column_name"] == "job_title" and customer["table_name"] == "users":
+            if len(str(customer["value"])) != 0:
+                organization_user_check_list.insert(4, str(customer["value"]))
+                same_organization_name_diffrent_user[5] = str(
+                    customer["value"])
+            else:
+                organization_user_check_list.insert(4, None)
+
+        if customer["column_name"] == "number" and customer["table_name"] == "phones":
+            if len(str(customer["value"])) == 0:
+                customer["is_deleted"] = True
+                organization_user_check_list.insert(5, None)
+                organization_user_check_list.insert(6, None)
+            else:
+                organization_user_check_list.insert(5, str(customer["value"]))
+                converted_number = re.sub(
+                    r'[^0-9]', '', str(customer["value"]))
+                organization_user_check_list.insert(6, converted_number)
 
         if customer["table_name"] == "addresses":
             if customer["column_name"] == "line_1":
@@ -381,10 +448,6 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
                 else:
                     customer_list.append(add_new_field(
                         "organization", "branch_addresses", "row_index", row_index, row_index))
-
-        if customer["column_name"] == "number" and customer["table_name"] == "phones":
-            if len(str(customer["value"])) == 0:
-                customer["is_deleted"] = True
 
         if not_address:
             not_address_fields = False
@@ -410,101 +473,43 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
         if customer["is_deleted"] != True:
             remove_customer_list_is_delete_true.append(customer)
 
-    if not name:
+    if not is_name:
         skip = True
 
-    if name and not skip:
-        for retrive in retrive_customer_data:
-            organization_name = False
-            user_create = False
-            organization_full_name = ""
-            
-            first_name = False
-            last_name = False
-            email = False
-            phone_number = False
-
-            first_name_value = ""
-            last_name_value = ""
-            email_value = ""
-            phone_number_value = ""
-            job_title_value = ""
-
-            id_value = ""
-            
-            for customer in remove_customer_list_is_delete_true:
-                if customer["column_name"] == "name":
-                    if retrive[1] == customer["value"]:
-                        organization_name = True
-                        skip = True
-
-                if customer["table_name"] == "users":
-                    organization_user = True
-                    if organization_name:
-                        if customer["column_name"] == "first_name":
-                            first_name_value = customer["value"]
-                            if retrive[2] == customer["value"]:
-                                first_name = True
-
-                        if customer["column_name"] == "last_name":
-                            last_name_value = customer["value"]
-                            if retrive[3] == customer["value"]:
-                                last_name = True
-
-                        if customer["column_name"] == "email":
-                            email_value = customer["value"]
-                            if retrive[4] == customer["value"]:
-                                email = True
-
-                        if customer["column_name"] == "phone":
-                            phone_number_value = customer["value"]
-                            if retrive[5] == customer["value"]:
-                                phone_number = True
-
-                        if customer["column_name"] == "job_title":
-                            job_title_value = customer["value"]
-                        id_value = retrive[0]
-
-                if first_name and last_name and email and phone_number:
+    if is_name and not skip:
+        is_email = False
+        organization_name = False
+        if name:
+            if len(retrive_customer_data["names_List"]) != 0:
+                if name in retrive_customer_data["names_List"]:
                     skip = True
-                    break
+                    organization_name = True
 
-                if email:
-                    skip = True
-                    break
+        if organization_name:
+            if email:
+                if len(retrive_customer_data["emails_List"]) != 0:
+                    if email in retrive_customer_data["emails_List"]:
+                        is_email = True
 
-            if organization_name:
-                if "dupicate_name_in_csv" in context.keys():
-                    user_create = True
-                    same_organization_name_diffrent_user[1] = first_name_value
-                    same_organization_name_diffrent_user[6] = id_value
-                    organization_full_name = first_name_value
-                else:
-                    if not first_name or not last_name or not email or not phone_number:
-                        user_create = True
-                        same_organization_name_diffrent_user[1] = first_name_value
-                        same_organization_name_diffrent_user[6] = id_value
-                        organization_full_name = first_name_value
+            if not is_email:
+                if len(retrive_customer_data["all_check_List"]) != 0:
+                    if organization_user_check_list not in retrive_customer_data["all_check_List"]:
+                        organization_user = True
 
-                if user_create and organization_user:
-                    same_organization_name_diffrent_user[2] = last_name_value
-                    organization_full_name = organization_full_name + " "+last_name_value
-                    same_organization_name_diffrent_user[0] = organization_full_name.strip(
-                    )
+            if "dupicate_name_in_csv" in context.keys():
+                organization_user = True
 
-                    same_organization_name_diffrent_user[3] = email_value
-                    same_organization_name_diffrent_user[4] = phone_number_value
-                    same_organization_name_diffrent_user[5] = job_title_value
-
-            if skip:
-                break
-
+            if organization_user:
+                id = retrive_customer_data["name_and_id_dict"][name]
+                same_organization_name_diffrent_user[6] = id
+                full_name = same_organization_name_diffrent_user[1] + \
+                    " "+same_organization_name_diffrent_user[2]
+                same_organization_name_diffrent_user[0] = full_name.strip()
     context_val = {}
     if skip:
         if organization_user:
             context_val.update(
                 {"same_organization_name_diffrent_user": same_organization_name_diffrent_user})
-
     context_val.update(
         {"skip": skip, "customer_list": remove_customer_list_is_delete_true})
     return context_val
@@ -516,9 +521,40 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
     not_address = False
     not_address_field = True
     remove_customer_list_is_delete_true = []
+    email = None
+    contact_check_list = []
+
     for customer in customer_list:
         if customer["column_name"] == "first_name" and customer["table_name"] == "customer_group":
-            name = len(str(customer["value"])) != 0
+            if len(str(customer["value"])) != 0:
+                contact_check_list.insert(0, str(customer["value"]))
+                name = True
+            else:
+                contact_check_list.insert(0, None)
+
+        if customer["column_name"] == "last_name" and customer["table_name"] == "customer_group":
+            if len(str(customer["value"])) != 0:
+                contact_check_list.insert(1, str(customer["value"]))
+            else:
+                contact_check_list.insert(1, None)
+
+        if customer["column_name"] == "email" and customer["table_name"] == "customer_group":
+            if len(str(customer["value"])) != 0:
+                contact_check_list.insert(2, str(customer["value"]))
+                email = str(customer["value"])
+            else:
+                contact_check_list.insert(2, None)
+
+        if customer["column_name"] == "number" and customer["table_name"] == "phones":
+            if len(str(customer["value"])) == 0:
+                customer["is_deleted"] = True
+                contact_check_list.insert(3, None)
+                contact_check_list.insert(4, None)
+            else:
+                contact_check_list.insert(3, str(customer["value"]))
+                converted_number = re.sub(
+                    r'[^0-9]', '', str(customer["value"]))
+                contact_check_list.insert(4, converted_number)
 
         if customer["table_name"] == "branch_addresses":
             if customer["column_name"] == "line_1":
@@ -529,10 +565,6 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
                 else:
                     customer_list.append(add_new_field(
                         "organization", "branch_addresses", "row_index", row_index, row_index))
-
-        if customer["column_name"] == "number" and customer["table_name"] == "phones":
-            if len(str(customer["value"])) == 0:
-                customer["is_deleted"] = True
 
         if not_address:
             not_address_field = False
@@ -551,97 +583,13 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
     if not name:
         skip = True
     if name and not skip:
-        for retrive in retrive_customer_data:
-            is_first_name = False
-            first_name = False
-
-            is_last_name = False
-            last_name = False
-
-            is_email = False
-            email = False
-
-            is_phone_number = False
-            phone_number = False
-            raw_number = False
-
-            for customer in remove_customer_list_is_delete_true:
-                if customer["column_name"] == "first_name":
-                    is_first_name = True
-
-                if customer["column_name"] == "last_name":
-                    is_last_name = True
-
-                if customer["column_name"] == "email":
-                    is_email = True
-
-                if customer["column_name"] == "number":
-                    is_phone_number = True
-
-                if retrive[2] == customer["value"]:
-                    first_name = True
-
-                if retrive[3] == customer["value"]:
-                    last_name = True
-
-                if retrive[4] == customer["value"]:
-                    email = True
-
-                if retrive[6] == customer["value"]:
-                    phone_number = True
-
-                if retrive[7] == customer["value"]:
-                    raw_number = True
-
-            if raw_number:
-                phone_number = True
-
-            skip = skip_occer_cenarios_in_contact(
-                is_first_name, first_name, is_last_name, last_name, is_email, email, is_phone_number, phone_number)
-            if skip:
-                break
+        if email:
+            if email in retrive_customer_data["emails"]:
+                skip = True
+        if len(contact_check_list) != 0 and not skip:
+            if contact_check_list in retrive_customer_data["return_data_List"]:
+                skip = True
     return {"skip": skip, "customer_list": remove_customer_list_is_delete_true}
-
-
-def skip_occer_cenarios_in_contact(is_first_name, first_name, is_last_name, last_name, is_email, email, is_phone_number, phone_number):
-    skip = False
-    if is_first_name and is_last_name and is_email and is_phone_number:
-        if first_name and last_name and email and phone_number:
-            skip = True
-        if first_name and last_name and email:
-            skip = True
-        if email:
-            skip = True
-
-    if is_first_name and is_last_name and is_email and not is_phone_number:
-        if first_name and last_name and email:
-            skip = True
-        if email:
-            skip = True
-
-    if is_first_name and is_last_name and is_phone_number and not is_email:
-        if first_name and last_name and phone_number:
-            skip = True
-
-    if is_first_name and is_email and not is_last_name and not is_phone_number:
-        if first_name and email:
-            skip = True
-        if email:
-            skip = True
-
-    if is_first_name and is_phone_number and not is_last_name and not is_email:
-        if first_name and phone_number:
-            skip = True
-
-    if is_first_name and is_last_name and not is_email and not is_phone_number:
-        if first_name and last_name:
-            skip = True
-
-    if is_first_name and not is_last_name and not is_email and not is_phone_number:
-        if first_name:
-            skip = True
-
-    return skip
 
 
 def add_new_field_based_on_user_type(row_index, customer_list, which_user):
@@ -650,7 +598,6 @@ def add_new_field_based_on_user_type(row_index, customer_list, which_user):
 
     if which_user == ORGAZANAIZATION:
         customer_list = add_new_field_in_organization(customer_list, row_index)
-
     return customer_list
 
 
@@ -683,45 +630,78 @@ def common_fields(customer_list, user_type, row_index):
 def add_new_field(user_type, table_name, column_name, value, row_index):
     field_format_dict = {}
     field_format_dict.update(
-        {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": value, "valid": True, "is_deleted": False, "customer": False, "line_number": row_index})
+        {
+            "user_type": user_type,
+            "table_name": table_name,
+            "column_name": column_name,
+            "value": value,
+            "valid": True,
+            "is_deleted": False,
+            "customer": False,
+            "line_number": row_index
+        })
     return field_format_dict
 
 
-def finding_which_data(row_index, user_type, table_name, column_name, validation, field_type, value, column_index):
+def finding_which_data(row_index, column_index, user_type, table_name, column_name, validation, field_type, value):
     field_format_dict = {}
-    if len(str(value)) != 0 or pd.isna(value):
-        valid = {"valid": False, "message": ""}
-        valid = check_validation(valid, validation, field_type, value)
-    else:
-        valid = {"valid": True}
+    valid = check_validation(validation, field_type, value)
+    value = valid["value"]
     if valid["valid"]:
         field_format_dict.update(
-            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": str(value), "valid": valid["valid"], "is_deleted": False, "line_number": row_index, "column_number": column_index})
+            {
+                "user_type": user_type,
+                "table_name": table_name,
+                "column_name": column_name,
+                "value": valid["value"],
+                "valid": valid["valid"],
+                "is_deleted": False,
+                "line_number": row_index,
+                "column_number": column_index
+            })
     else:
         message = valid["message"]
         field_format_dict.update(
-            {"user_type": user_type, "table_name": table_name, "column_name": column_name, "value": f"{value} - {message} ", "valid": valid["valid"], "is_deleted": False, "line_number": row_index, "column_number": column_index})
+            {
+                "user_type": user_type,
+                "table_name": table_name,
+                "column_name": column_name,
+                "value": f"{value} - {message} ",
+                "valid": valid["valid"],
+                "is_deleted": False,
+                "line_number": row_index,
+                "column_number": column_index
+            })
     return field_format_dict
 
 
+def check_validation(validation, field_type, value):
+    min = validation["min"]
+    max = validation["max"]
+    value = valid_value(value)
+    if len(value) != 0:
+        valid_dict = {"valid": False, "message": ""}
+        if field_type == "alpha_numeric":
+            valid_dict = is_valid_alphanumeric(value, min, max)
+        if field_type == "all_characters":
+            valid_dict = is_all_characters(value, min, max)
+        if field_type == "website":
+            valid_dict = is_valid_url(value, min, max)
+        if field_type == "number":
+            valid_dict = is_valid_phone_number(value, min, max)
+        if field_type == "email":
+            valid_dict = is_valid_email(value, min, max)
+    else:
+        valid_dict = {"valid": True, "message": ""}
+    valid_dict.update({"value": value})
+    return valid_dict
 
-def check_validation(valid, validation, field_type, value):
-    min = int(validation["min"]) if len(validation["min"]) != 0 else 1
-    max = int(validation["max"]) if len(validation["max"]) != 0 else 256
+
+def valid_value(value):
+    value = "" if value == "." else value
     value = "" if pd.isna(value) else value
     value = str(value) if value else ""
-    if len(value) != 0:
-        if field_type == "alpha_numeric":
-            valid = is_valid_alphanumeric(value, min, max)
-        if field_type == "all_characters":
-            valid = is_all_characters(value, min, max)
-        if field_type == "website":
-            valid = is_valid_url(value, min, max)
-        if field_type == "number":
-            valid = is_valid_phone_number(value, min, max)
-        if field_type == "email":
-            valid = is_valid_email(value, min, max)
-    return valid
+    return value
 
 
 def organizing_with_table_name(row_index, field_format_return_dict):
@@ -732,13 +712,13 @@ def organizing_with_table_name(row_index, field_format_return_dict):
             if field_name['table_name'] not in responce_dict:
                 responce_dict[field_name['table_name']] = []
             responce_dict[field_name['table_name']].append(field_name)
-        responce_dict = split_customer_group_for_user(
+        responce_dict = split_and_add_fields_customer_group_for_user(
             responce_dict, row_index)
         responce_list.append(responce_dict)
     return responce_list
 
 
-def split_customer_group_for_user(responce_dict, row_index):
+def split_and_add_fields_customer_group_for_user(responce_dict, row_index):
     if "users" not in responce_dict.keys():
         responce_dict["users"] = []
 
@@ -909,9 +889,7 @@ def all_table_names_convert_dict_of_list(tables_names):
 # --------------------------------step 4--------------------------------
 
 
-def bulk_insert_using_bulk_type(context, organized_customer_list=[], customer_list=[]):
-    customer_group_addresess_list = bulk_insert_function(
-        organized_customer_list, context)
+def bulk_insert_user_and_address(context, customer_group_addresess_list, customer_list=[]):
     thread = threading.Thread(target=users_and_phones_and_customer_group_addresess_mapping, args=(
         customer_list, customer_group_addresess_list, context))
     thread.start()
@@ -1284,117 +1262,82 @@ def same_organization_diffrent_user(users_data_and_customer_group, context, role
     if "same_organization_diffrent_user" in context.keys():
         same_organization_diffrent_user = context["same_organization_diffrent_user"]
         if len(same_organization_diffrent_user) != 0:
-            coustomer_id_is_dict = {}
-            for i in same_organization_diffrent_user:
-                if i[6] not in coustomer_id_is_dict:
-                    coustomer_id_is_dict[i[6]] = []
-                coustomer_id_is_dict[i[6]].append(i)
-            for coustomer_id, values in coustomer_id_is_dict.items():
+            for coustomer_id, values in same_organization_diffrent_user.items():
                 retrive_user = bulk_insert_users(
                     [], coustomer_id, TENANT_ID, select=True)
-                for i in values:
-                    first_name = False
-                    last_name = False
-                    jobtitle = False
+                for value in values:
                     email = False
-                    phone = False
-                    id = False
-                    if len(retrive_user) != 0:
-                        for user in retrive_user:
-                            if i[1] == user[2]:
-                                first_name = True
-                            if i[2] == user[3]:
-                                last_name = True
-                            if i[5] == user[4]:
-                                jobtitle = True
-                            if i[3] == user[6]:
-                                email = True
-                            if i[4] == user[10]:
-                                phone = True
-                            if i[6] == user[29]:
-                                id = True
-                            if first_name and last_name and jobtitle and email and phone and id:
-                                break
-                    create = check_same_organization_user_diffrent_user_cenarios(
-                        first_name, last_name, jobtitle, email, phone, id)
-                    if create:
-                        i.append(TENANT_ID)
-                        i.append(role_id)
-                        i.append(created_by)
-                        i.append(status)
-                        i.append(hash_password)
-                        i.append(datetime.datetime.now())
-                        users_data_and_customer_group.append(tuple(i))
-
+                    if value[3] != None:
+                        if value[3] in retrive_user["email_List"]:
+                            email = True
+                    if not email:
+                        if value not in retrive_user["return_all_list"]:
+                            value.append(TENANT_ID)
+                            value.append(role_id)
+                            value.append(created_by)
+                            value.append(status)
+                            value.append(hash_password)
+                            value.append(datetime.datetime.now())
+                            users_data_and_customer_group.append(tuple(value))
     return users_data_and_customer_group
 
 
-def check_same_organization_user_diffrent_user_cenarios(first_name, last_name, jobtitle, email, phone, id):
-    create = False
-    if first_name and last_name and id:
-        if jobtitle and email and not phone:
-            create = True
-        if jobtitle and not email and phone:
-            create = True
-        if not jobtitle and email and phone:
-            create = True
-        if not jobtitle and not email and phone:
-            create = True
-        if not jobtitle and email and not phone:
-            create = True
-        if jobtitle and not email and not phone:
-            create = True
-        if not jobtitle and not email and not phone:
-            create = True
+def send_email(count, file_url, logo_url, target_email, filename=None):
+    with app.app_context():
+        try:
+            msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
+                          recipients=[target_email])
+            with app.open_resource(file_url) as csv_file:
+                msg.attach(filename=filename,
+                           content_type="text/csv", data=csv_file.read())
+            msg.html = email_template(count=count, logo_url=logo_url)
+            mail.send(msg)
+            return 'Email sent!'
+        except Exception as e:
+            return f" email : {str(e)}"
 
-    if first_name and not last_name and id:
-        if jobtitle and email and not phone:
-            create = True
-        if jobtitle and not email and phone:
-            create = True
-        if not jobtitle and email and phone:
-            create = True
-        if not jobtitle and not email and phone:
-            create = True
-        if not jobtitle and email and not phone:
-            create = True
-        if jobtitle and not email and not phone:
-            create = True
-        if not jobtitle and not email and not phone:
-            create = True
 
-    if not first_name and last_name and id:
-        if jobtitle and email and not phone:
-            create = True
-        if jobtitle and not email and phone:
-            create = True
-        if not jobtitle and email and phone:
-            create = True
-        if not jobtitle and not email and phone:
-            create = True
-        if not jobtitle and email and not phone:
-            create = True
-        if jobtitle and not email and not phone:
-            create = True
-        if not jobtitle and not email and not phone:
-            create = True
+def send_error_thread(message, traceback, logo_url):
+    def send_error_email(message, traceback, logo_url):
+        with app.app_context():
+            try:
+                msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
+                              recipients=[str(ERROR_TARGET_EMAIL)])
+                msg.html = error_template(
+                    message=message, traceback=traceback, logo_url=logo_url)
+                mail.send(msg)
+                return 'Email sent!'
+            except Exception as e:
+                return f" email : {str(e)}"
+    send_mail = threading.Thread(
+        target=send_error_email, args=(message, traceback, logo_url))
+    send_mail.start()
+    return " Send error email"
 
-    if not first_name and not last_name and id:
-        if jobtitle and email and not phone:
-            create = True
-        if jobtitle and not email and phone:
-            create = True
-        if not jobtitle and email and phone:
-            create = True
-        if not jobtitle and not email and phone:
-            create = True
-        if not jobtitle and email and not phone:
-            create = True
-        if jobtitle and not email and not phone:
-            create = True
-        if not jobtitle and not email and not phone:
-            create = True
-    return create
+
+def api_call_for_cashe(TENANT_ID):
+    try:
+        def call_for_cashe(TENANT_ID):
+            params = {"type": TENANT_ID}
+            customers_cache_tenantId = requests.get(
+                'https://devgateway.getfieldy.com/z1/job/cache/flush', params=params)
+            quotes_customer_cache_tenantId = requests.get(
+                'https://devgateway.getfieldy.com/z1/accounting/cache/flush', params=params)
+            return "Api Call Successfully"
+        send_mail = threading.Thread(
+            target=call_for_cashe, args=(TENANT_ID,))
+        send_mail.start()
+        return "Api Called"
+    except Exception as e:
+        response = {
+            'message': 'File imported  Failed',
+            "error": {
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }
+        }
+        send_error_thread(message=response["error"]["message"], traceback=response["error"]
+                          ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
 
 
 if __name__ == "__main__":
