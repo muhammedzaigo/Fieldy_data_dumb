@@ -1144,8 +1144,11 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
                             # map customer_group_pk and first name and last name for users table
                             if which_user == ORGAZANAIZATION:
-                                if users_first_name != None or users_last_name != None:
-                                    users_name = f"{users_first_name} {users_last_name}"
+                                if users_first_name or users_last_name  or users_phone or users_job_title:
+                                    users_name = ""
+                                    if users_first_name :
+                                        users_name = f"{users_first_name} {users_last_name}"
+                                        users_name = users_name.strip()
                                     users_data_and_customer_group.append(
                                         (users_name, users_first_name, users_last_name, users_email, users_phone, users_job_title, customer_group_id_and_email[0], TENANT_ID, role_id, created_by, status, hash_password, datetime.datetime.now()))
                                 users_data_and_customer_group.append(
