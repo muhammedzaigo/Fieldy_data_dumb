@@ -413,8 +413,8 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
                 customer["is_deleted"] = True
             else:
                 organization_user_check_list[5] = str(customer["value"])
-                converted_number = re.sub(
-                    r'[^0-9]', '', str(customer["value"]))
+                converted_number = re.sub(r'[^0-9]', '', str(customer["value"]))
+                converted_number = re.sub(r'\D', '', converted_number)
                 organization_user_check_list[6] = converted_number
 
         if customer["table_name"] == "addresses":
@@ -532,8 +532,8 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
                 customer["is_deleted"] = True
             else:
                 contact_check_list[3] =str(customer["value"])
-                converted_number = re.sub(
-                    r'[^0-9]', '', str(customer["value"]))
+                converted_number = re.sub(r'[^0-9]', '', str(customer["value"]))
+                converted_number = re.sub(r'\D', '', converted_number)
                 contact_check_list[4] = converted_number
 
         if customer["table_name"] == "branch_addresses":
@@ -1117,8 +1117,8 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                             # map customer_group_pk and phone number for phones table
                             if phone:
                                 if len(str(phone)) != 0:
-                                    converted_number = re.sub(
-                                        r'[^0-9]', '', str(phone))
+                                    converted_number = re.sub(r'[^0-9]', '', str(phone))
+                                    converted_number = re.sub(r'\D', '', converted_number)
                                     phone_number_and_customer_group.append(
                                         (phone, "work", customer_group_id_and_email[0], TENANT_ID, "App\Model\Tenant\CustomerGroup", converted_number, datetime.datetime.now()))
 
