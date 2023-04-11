@@ -140,11 +140,11 @@ def add_validation_fields(values, key, json_format):
 
     if values["table_slug"] == "number":
         json_format[key].update({"validation": validation(
-            min=6, max=15), "field_type": "number"})
+            min=6, max=20), "field_type": "number"})
 
     if values["table_slug"] == "phone":
         json_format[key].update({"validation": validation(
-            min=6, max=15), "field_type": "number"})
+            min=6, max=20), "field_type": "number"})
 
     if values["table_slug"] == "lead_source":
         json_format[key].update({"validation": validation(
@@ -183,7 +183,7 @@ def validation(min=0, max=256):
 
 def is_valid_email(email, min, max):
     response = {}
-    pattern = r"^[a-zA-Z0-9._%+\-]{1,64}@[a-zA-Z0-9.\-]{1,255}\.[a-zA-Z]{2,}$"
+    pattern = r"^[a-zA-Z0-9._%+\-]{1,64}@[a-zA-Z0-9.\-]{1,256}\.[a-zA-Z]{2,}$"
     if re.match(pattern, email):
         response.update({"valid": True})
     else:
