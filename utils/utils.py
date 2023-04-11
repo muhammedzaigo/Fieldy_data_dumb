@@ -206,12 +206,17 @@ def is_valid_phone_number(number, min=6, max=15):
     converted_number = re.sub(r'[^0-9]', '', str(number))
     pattern = r"^\+?[1-9]\d{%d,%d}$" % (min-1, max-1)
     response = {}
-    if re.match(pattern, converted_number):
-        if len(converted_number) >= min and len(converted_number) <= max:
-            response.update({"valid": True})
-    else:
+    serch_pattern = r"[\.e]" 
+    if re.search(serch_pattern, str(number)):
         response.update(
-            {"valid": False, "message": f"Invalid phone number or phone number must be minimum {min} and maximam {max} characters"})
+            {"valid": False, "message": f"Invalid phone number"})
+    else:
+        if re.match(pattern, converted_number):
+            if len(converted_number) >= min and len(converted_number) <= max:
+                response.update({"valid": True})
+        else:
+            response.update(
+                {"valid": False, "message": f"Invalid phone number or phone number must be minimum {min} and maximam {max} characters"})
     return response
 
 
