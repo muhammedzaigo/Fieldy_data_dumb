@@ -367,7 +367,7 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
     not_address_fields = True
     not_branch_addresses_fields = True
 
-    organization_user_check_list = []
+    organization_user_check_list = [None, None, None, None, None, None, None]
     name = None
     email = None
     for customer in customer_list:
@@ -378,56 +378,44 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
 
         if customer["column_name"] == "first_name" and customer["table_name"] == "users":
             if len(str(customer["value"])) != 0:
-                organization_user_check_list.insert(0, str(customer["value"]))
+                organization_user_check_list[0] = str(customer["value"])
                 same_organization_name_diffrent_user[1] = str(
                     customer["value"])
-            else:
-                organization_user_check_list.insert(0, None)
 
         if customer["column_name"] == "last_name" and customer["table_name"] == "users":
             if len(str(customer["value"])) != 0:
-                organization_user_check_list.insert(1, str(customer["value"]))
+                organization_user_check_list[1] = str(customer["value"])
                 same_organization_name_diffrent_user[2] = str(
                     customer["value"])
 
-            else:
-                organization_user_check_list.insert(1, None)
-
         if customer["column_name"] == "email" and customer["table_name"] == "users":
             if len(str(customer["value"])) != 0:
-                organization_user_check_list.insert(2, str(customer["value"]))
+                organization_user_check_list[2] = str(customer["value"])
                 same_organization_name_diffrent_user[3] = str(
                     customer["value"])
                 email = str(customer["value"])
-            else:
-                organization_user_check_list.insert(2, None)
 
         if customer["column_name"] == "phone" and customer["table_name"] == "users":
             if len(str(customer["value"])) != 0:
-                organization_user_check_list.insert(3, str(customer["value"]))
+                organization_user_check_list[3] = str(customer["value"])
                 same_organization_name_diffrent_user[4] = str(
                     customer["value"])
-            else:
-                organization_user_check_list.insert(3, None)
 
         if customer["column_name"] == "job_title" and customer["table_name"] == "users":
             if len(str(customer["value"])) != 0:
-                organization_user_check_list.insert(4, str(customer["value"]))
+                organization_user_check_list[4] = str(customer["value"])
                 same_organization_name_diffrent_user[5] = str(
                     customer["value"])
-            else:
-                organization_user_check_list.insert(4, None)
+
 
         if customer["column_name"] == "number" and customer["table_name"] == "phones":
             if len(str(customer["value"])) == 0:
                 customer["is_deleted"] = True
-                organization_user_check_list.insert(5, None)
-                organization_user_check_list.insert(6, None)
             else:
-                organization_user_check_list.insert(5, str(customer["value"]))
+                organization_user_check_list[5] = str(customer["value"])
                 converted_number = re.sub(
                     r'[^0-9]', '', str(customer["value"]))
-                organization_user_check_list.insert(6, converted_number)
+                organization_user_check_list[6] = converted_number
 
         if customer["table_name"] == "addresses":
             if customer["column_name"] == "line_1":
@@ -522,39 +510,31 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
     not_address_field = True
     remove_customer_list_is_delete_true = []
     email = None
-    contact_check_list = []
+    contact_check_list = [None,None,None,None,None]
 
     for customer in customer_list:
         if customer["column_name"] == "first_name" and customer["table_name"] == "customer_group":
             if len(str(customer["value"])) != 0:
-                contact_check_list.insert(0, str(customer["value"]))
+                contact_check_list[0] =str(customer["value"])
                 name = True
-            else:
-                contact_check_list.insert(0, None)
 
         if customer["column_name"] == "last_name" and customer["table_name"] == "customer_group":
             if len(str(customer["value"])) != 0:
-                contact_check_list.insert(1, str(customer["value"]))
-            else:
-                contact_check_list.insert(1, None)
+                contact_check_list[1] =str(customer["value"])
 
         if customer["column_name"] == "email" and customer["table_name"] == "customer_group":
             if len(str(customer["value"])) != 0:
-                contact_check_list.insert(2, str(customer["value"]))
+                contact_check_list[2] =str(customer["value"])
                 email = str(customer["value"])
-            else:
-                contact_check_list.insert(2, None)
 
         if customer["column_name"] == "number" and customer["table_name"] == "phones":
             if len(str(customer["value"])) == 0:
                 customer["is_deleted"] = True
-                contact_check_list.insert(3, None)
-                contact_check_list.insert(4, None)
             else:
-                contact_check_list.insert(3, str(customer["value"]))
+                contact_check_list[3] =str(customer["value"])
                 converted_number = re.sub(
                     r'[^0-9]', '', str(customer["value"]))
-                contact_check_list.insert(4, converted_number)
+                contact_check_list[4] = converted_number
 
         if customer["table_name"] == "branch_addresses":
             if customer["column_name"] == "line_1":
