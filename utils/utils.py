@@ -52,8 +52,6 @@ def password_hash(password):
     return hashed_password
 
 
-
-
 def currect_json_map_and_which_user_type(json_format):
     organization = False
     which_types_imported = CONTACT
@@ -63,16 +61,17 @@ def currect_json_map_and_which_user_type(json_format):
         if value["table_slug"] == "zipcode":
             value["table_slug"] = "zip_code"
 
-        if value["parent"] == "addresses": # contact and organization address change to branch_address
+        # contact and organization address change to branch_address
+        if value["parent"] == "addresses":
             if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
                 value["parent"] = "branch_addresses"
 
         if value["parent"] == "":
             if value["table_slug"] in ["name", "website", "email", "first_name", "last_name", "lead_source"]:
                 value["parent"] = "customer_group"
-             
-            if value["table_slug"] ==  "job_title":
-                value["parent"] = "users"   
+
+            if value["table_slug"] == "job_title":
+                value["parent"] = "users"
 
             if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name"]:
                 value["parent"] = "addresses"
@@ -177,10 +176,7 @@ def add_validation_fields(values, key, json_format):
     return json_format
 
 
-
-
-
-def validation(min = 0, max = 256):
+def validation(min=0, max=256):
     validation = {"min": min, "max": max}
     return validation
 
@@ -295,9 +291,9 @@ def add_column_values(val, table_name, TENANT_ID, bulk_insert_id, created_by):
     return val
 
 
-def remove_duplicates_in_sheet(sheet, which_user,json_format):
+def remove_duplicates_in_sheet(sheet, which_user, json_format):
     if which_user == ORGAZANAIZATION:
-        context = organization_remove_duplicates_in_sheet(sheet,json_format)
+        context = organization_remove_duplicates_in_sheet(sheet, json_format)
     else:
         context = contact_remove_duplicates_in_sheet(sheet)
     return context
@@ -327,16 +323,16 @@ def contact_remove_duplicates_in_sheet(read_sheet):
     return context
 
 
-def organization_remove_duplicates_in_sheet(read_sheet,json_format):
+def organization_remove_duplicates_in_sheet(read_sheet, json_format):
     uniqe_fieldname = "organization_name"
-    for key,value in json_format.items():
+    for key, value in json_format.items():
         if value["table_slug"] == "name":
             uniqe_fieldname = value["sheet_header_name"]
             uniqe_fieldname = uniqe_fieldname.lower()
             break
-        
+
     df = pd.read_csv(io.StringIO(read_sheet))
-    
+
     df.columns = map(str.lower, df.columns)
     df = df.fillna('')
     if 'email' in df.columns and not df['email'].isnull().all():
@@ -397,9 +393,9 @@ def import_sheets(file):
         csv_filename = f"sheets/{sheet_name}_{timestamp}.csv"
         sheet_data.to_csv(csv_filename, index=False)
         with open(csv_filename, 'rb') as csv_file:
-                encoding_type = chardet.detect(csv_file.read())
+            encoding_type = chardet.detect(csv_file.read())
         with open(csv_filename, 'r', encoding=encoding_type['encoding']) as csv_file:
-                import_sheet = csv_file.read()
+            import_sheet = csv_file.read()
         XLSX = True
 
     return {

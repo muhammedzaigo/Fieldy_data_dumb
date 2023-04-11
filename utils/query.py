@@ -122,10 +122,10 @@ def bulk_insert_users(users_data_and_customer_group, coustomer_id, TENANT_ID, se
             qry = '''SELECT `first_name`,`last_name`,`email`,`phone`,`job_title`,`id_customer_group` FROM `users` WHERE `tenant_id` = %s AND `id_customer_group` = %s '''
             val = (TENANT_ID, coustomer_id)
             users = select_filter(qry, val)
-            
+
             for user in users:
                 if user[2] != None:
-                    if len(str(user[2])) !=0:
+                    if len(str(user[2])) != 0:
                         email_List.append(user[2])
                 return_list = []
                 for single in user:
@@ -134,10 +134,10 @@ def bulk_insert_users(users_data_and_customer_group, coustomer_id, TENANT_ID, se
                             single = None
                     return_list.append(single)
                 return_all_list.append(return_list)
-                
+
     except Exception as e:
         print(f"users {types} : {str(e)} ")
-    return {"return_all_list":return_all_list,"email_List":email_List}
+    return {"return_all_list": return_all_list, "email_List": email_List}
 
 
 def retrive_role_id(TENANT_ID, select=False):
@@ -233,7 +233,7 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
     TENANT_ID = context["TENANT_ID"]
     which_user = context["which_user"]
     retrive_customer_data_using_tenant_id = []
-    return_context ={}
+    return_context = {}
     try:
         if which_user == ORGAZANAIZATION:
 
@@ -243,19 +243,21 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
                 retrive_customer_data_using_tenant_id = select_filter(qry, val)
                 names_List = []
                 name_and_id_dict = {}
-                for single_list in retrive_customer_data_using_tenant_id:                    
+                for single_list in retrive_customer_data_using_tenant_id:
                     if single_list[1] != None:
                         if len(single_list[1]) != 0:
                             names_List.append(single_list[1])
-                            name_and_id_dict.update({single_list[1]:single_list[0]})
-                return_context = {"return_data_List":[],"names_List":list(set(names_List)),"emails_List":[],"all_check_List":[],"name_and_id_dict":name_and_id_dict}
+                            name_and_id_dict.update(
+                                {single_list[1]: single_list[0]})
+                return_context = {"return_data_List": [], "names_List": list(set(
+                    names_List)), "emails_List": [], "all_check_List": [], "name_and_id_dict": name_and_id_dict}
             else:
                 qry = '''SELECT `customer_group`.`id_customer_group`, `customer_group`.`name`, `users`.`first_name`, `users`.`last_name`, `users`.`email`, `users`.`phone`, `users`.`job_title`, `phones`.`number`, `phones`.`raw_number` FROM `customer_group`
                 LEFT JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group` LEFT JOIN `phones` ON `phones`.`phoneable_id`=`customer_group`.`id_customer_group` 
                 WHERE `users`.`tenant_id`= %s AND `customer_group`.`tenant_id` = %s AND `customer_group`.`customer_type` = %s'''
                 val = (TENANT_ID, TENANT_ID, "company_customer")
                 retrive_customer_data_using_tenant_id = select_filter(qry, val)
-                
+
                 return_data_List = []
                 names_List = []
                 all_check_List = []
@@ -265,24 +267,27 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
                     if single_list[1] != None:
                         if len(single_list[1]) != 0:
                             names_List.append(single_list[1])
-                            name_and_id_dict.update({single_list[1]:single_list[0]})
-                            
+                            name_and_id_dict.update(
+                                {single_list[1]: single_list[0]})
+
                     if single_list[4] != None:
                         if len(single_list[4]) != 0:
-                            emails_List.append(single_list[4])    
-                                       
+                            emails_List.append(single_list[4])
+
                     return_data = []
                     for single in single_list:
                         if single != None:
                             if len(str(single)) == 0:
                                 single = None
                         return_data.append(single)
-                        
-                    check_list = [return_data[2],return_data[3],return_data[4],return_data[5],return_data[6],return_data[7],return_data[8]]
+
+                    check_list = [return_data[2], return_data[3], return_data[4],
+                                  return_data[5], return_data[6], return_data[7], return_data[8]]
                     all_check_List.append(check_list)
                     return_data_List.append(return_data)
-                return_context = {"return_data_List":return_data_List,"names_List":list(set(names_List)),"emails_List":list(set(emails_List)),"all_check_List":all_check_List,"name_and_id_dict":name_and_id_dict}
-                
+                return_context = {"return_data_List": return_data_List, "names_List": list(set(names_List)), "emails_List": list(
+                    set(emails_List)), "all_check_List": all_check_List, "name_and_id_dict": name_and_id_dict}
+
         if which_user == CONTACT:
             qry = '''SELECT `users`.`first_name`, `users`.`last_name`, `users`.`email`, `phones`.`number`, `phones`.`raw_number` FROM `customer_group`
             LEFT JOIN `users` ON `users`.`id_customer_group`=`customer_group`.`id_customer_group` LEFT JOIN `phones` ON `phones`.`phoneable_id`=`customer_group`.`id_customer_group` 
@@ -303,7 +308,8 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
                             single = None
                     return_data.append(single)
                 return_data_List.append(return_data)
-            return_context = {"return_data_List":return_data_List,"emails":emails}
+            return_context = {
+                "return_data_List": return_data_List, "emails": emails}
     except Exception as e:
         print(f"get_bulk_retrive_using_tenant_id : {str(e)}")
     return return_context

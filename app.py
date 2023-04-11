@@ -1144,9 +1144,9 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
 
                             # map customer_group_pk and first name and last name for users table
                             if which_user == ORGAZANAIZATION:
-                                if users_first_name or users_last_name  or users_phone or users_job_title:
+                                if users_first_name or users_last_name or users_phone or users_job_title:
                                     users_name = ""
-                                    if users_first_name :
+                                    if users_first_name:
                                         users_name = f"{users_first_name} {users_last_name}"
                                         users_name = users_name.strip()
                                     users_data_and_customer_group.append(
