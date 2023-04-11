@@ -163,16 +163,16 @@ def add_validation_fields(values, key, json_format):
             max=256), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "job_title":
-        json_format[key].update(
-            {"validation": validation(max=256), "field_type": "alpha_numeric"})
+        json_format[key].update({"validation": validation(
+            max=256), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "name":
         json_format[key].update({"validation": validation(
             max=256), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "website":
-        json_format[key].update(
-            {"validation": validation(max=512), "field_type": "website"})
+        json_format[key].update({"validation": validation(
+            max=512), "field_type": "website"})
     return json_format
 
 
