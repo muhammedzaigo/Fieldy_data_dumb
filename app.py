@@ -218,7 +218,6 @@ def read_data_row_by_rows(cleaned_data, field_names, json_format, context, retri
     same_organization_diffrent_user = []
 
     for row_index, line in enumerate(cleaned_data, 1):
-
         field_type = divide_to_field_type_with_json_format(
             row_index, line, field_names, json_format, context, retrive_customer_data)
 
@@ -279,7 +278,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
         column_index = json_format[key]['sheet_header_index']
         field_name = field_names[column_index]
         value = line[field_name]
-
+        
         if user_type == "contact":
             field_format_return_dict = finding_which_data(row_index, column_index,
                                                           user_type, table_name, column_name, validation, field_type, value)
@@ -680,7 +679,8 @@ def check_validation(validation, field_type, value):
 def valid_value(value):
     value = "" if value == "." else value
     value = "" if pd.isna(value) else value
-    value = str(value) if value else ""
+    value = str(value) 
+    value = value if len(value) != 0 else ""
     return value
 
 
@@ -900,6 +900,11 @@ def bulk_insert_function(organized_customer_list, context):
                 if table_name in ["addresses", "branch_addresses"]:
                     if table_name == "branch_addresses":
                         table_name = "addresses"
+                    
+                    for i in values:
+                        if len(i) != 12:
+                            print(i)                    
+                    
                     bulk_insert_dynamic(
                         table_name, column_names, values, insert=True)
 
