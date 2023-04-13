@@ -436,22 +436,13 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
                     customer_list.append(add_new_field(
                         "organization", "branch_addresses", "row_index", row_index, row_index))
 
-        if not_address:
-            not_address_fields = False
-            if customer["table_name"] == "addresses":
-                customer["is_deleted"] = True
 
-        if not_branch_addresses:
-            not_branch_addresses_fields = False
-            if customer["table_name"] == "branch_addresses":
-                customer["is_deleted"] = True
-
-    if not_address_fields:
+    if not_address_fields or not_address:
         for customer in customer_list:
             if customer["table_name"] == "addresses":
                 customer["is_deleted"] = True
 
-    if not_branch_addresses_fields:
+    if not_branch_addresses_fields or not_branch_addresses:
         for customer in customer_list:
             if customer["table_name"] == "branch_addresses":
                 customer["is_deleted"] = True
@@ -545,12 +536,7 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
                     customer_list.append(add_new_field(
                         "organization", "branch_addresses", "row_index", row_index, row_index))
 
-        if not_address:
-            not_address_field = False
-            if customer["table_name"] == "branch_addresses":
-                customer["is_deleted"] = True
-
-    if not_address_field:
+    if not_address_field or not_address:
         for customer in customer_list:
             if customer["table_name"] == "branch_addresses":
                 customer["is_deleted"] = True
