@@ -365,7 +365,7 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
     remove_customer_list_is_delete_true = []
     not_address_fields = True
     not_branch_addresses_fields = True
-
+    message = ""
     organization_user_check_list = [None, None, None, None, None, None, None]
     name = None
     email = None
@@ -453,6 +453,7 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
 
     if not is_name:
         skip = True
+        message = "Not given a Organization name"
 
     if is_name and not skip:
         is_email = False
@@ -462,7 +463,8 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
                 if name in retrive_customer_data["names_List"]:
                     skip = True
                     organization_name = True
-
+                    message = "Already registered Organization name"
+                    
         if organization_name:
             if email:
                 if len(retrive_customer_data["emails_List"]) != 0:
@@ -483,13 +485,16 @@ def skip_organization(row_index, context, customer_list, retrive_customer_data):
                 full_name = same_organization_name_diffrent_user[1] + \
                     " "+same_organization_name_diffrent_user[2]
                 same_organization_name_diffrent_user[0] = full_name.strip()
-    context_val = {}
+                
+    context_val = {"customer_list": remove_customer_list_is_delete_true}
     if skip:
+        message = add_new_field("organization", "skip", "message", message, row_index)
+        customer_list.append(message)
+        context_val["customer_list"] = customer_list
         if organization_user:
             context_val.update(
                 {"same_organization_name_diffrent_user": same_organization_name_diffrent_user})
-    context_val.update(
-        {"skip": skip, "customer_list": remove_customer_list_is_delete_true})
+    context_val.update({"skip": skip})
     return context_val
 
 
@@ -501,7 +506,7 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
     remove_customer_list_is_delete_true = []
     email = None
     contact_check_list = [None,None,None,None,None]
-
+    message = ""
     for customer in customer_list:
         if customer["column_name"] == "first_name" and customer["table_name"] == "customer_group":
             if len(str(customer["value"])) != 0:
@@ -547,14 +552,24 @@ def skip_contact(row_index, customer_list, retrive_customer_data):
 
     if not name:
         skip = True
+        message = "Not given a first name"
     if name and not skip:
         if email:
             if email in retrive_customer_data["emails"]:
                 skip = True
+                message = "Email already exists"
+                
         if len(contact_check_list) != 0 and not skip:
             if contact_check_list in retrive_customer_data["return_data_List"]:
                 skip = True
-    return {"skip": skip, "customer_list": remove_customer_list_is_delete_true}
+                message = "Contact already exists"
+    context_val = {"customer_list": remove_customer_list_is_delete_true}
+    if skip:
+        message = add_new_field("contact", "skip", "message", message, row_index)
+        customer_list.append(message)
+        context_val["customer_list"] = customer_list
+    context_val.update({"skip": skip})
+    return context_val
 
 
 def add_new_field_based_on_user_type(row_index, customer_list, which_user):
@@ -602,8 +617,7 @@ def add_new_field(user_type, table_name, column_name, value, row_index):
             "value": value,
             "valid": True,
             "is_deleted": False,
-            "customer": False,
-            "line_number": row_index
+            "line_number": row_index,
         })
     return field_format_dict
 
@@ -777,15 +791,22 @@ def send_skipped_data(field_names, skip_data, target_email, skip_data_count):
     for data in skip_data:
         single_line_data = [""] * len(field_names)
         line_number = 0
+        massage = None
         for value in data:
+            if value["table_name"] == "skip" and value["column_name"] == "message":
+                    massage = value["value"]
             if "column_number" in value.keys():
                 single_line_data[value["column_number"]+1] = value["value"]
             line_number = value["line_number"]
         single_line_data[0] = line_number
+        if massage:
+            single_line_data.append(massage)
         all_data_list.append(single_line_data)
     csv_name = f"skipped_data_"+datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     try:
-        df = pd.DataFrame(all_data_list, columns=field_names)
+        field_names_copy = field_names.copy()
+        field_names_copy.append("message")
+        df = pd.DataFrame(all_data_list, columns=field_names_copy)
         df.to_csv(f'invalid_data_sheets/{csv_name}.csv', index=False)
     except Exception as e:
         print("Error", str(e))
@@ -885,12 +906,7 @@ def bulk_insert_function(organized_customer_list, context):
                         table_name, column_names, values, insert=True)
                 if table_name in ["addresses", "branch_addresses"]:
                     if table_name == "branch_addresses":
-                        table_name = "addresses"
-                    
-                    for i in values:
-                        if len(i) != 12:
-                            print(i)                    
-                    
+                        table_name = "addresses"                    
                     bulk_insert_dynamic(
                         table_name, column_names, values, insert=True)
 
