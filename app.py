@@ -811,7 +811,7 @@ def send_skipped_data(field_names, skip_data, target_email, skip_data_count):
     except Exception as e:
         print("Error", str(e))
     send_email(count=skip_data_count, file_url=os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp", target_email=target_email, filename=f"{csv_name}.csv")
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp", target_email=target_email, filename=f"{csv_name}.csv",massege_type="skipped")
 
 
 def send_invalid_data(field_names, invalid_data, target_email, invalid_data_count):
@@ -832,7 +832,7 @@ def send_invalid_data(field_names, invalid_data, target_email, invalid_data_coun
     except Exception as e:
         print("Error", str(e))
     send_email(count=invalid_data_count, file_url=os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp", target_email=target_email, filename=f"{csv_name}.csv")
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp", target_email=target_email, filename=f"{csv_name}.csv",massege_type="invalid")
 
 
 def send_duplicate_data(field_names, duplicate_data, target_email, duplicate_data_count):
@@ -851,7 +851,7 @@ def send_duplicate_data(field_names, duplicate_data, target_email, duplicate_dat
     except Exception as e:
         print("Error", str(e))
     send_email(count=duplicate_data_count, file_url=os.path.join(os.path.abspath(os.path.dirname(
-        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp", target_email=target_email, filename=f"{csv_name}.csv")
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp", target_email=target_email, filename=f"{csv_name}.csv",massege_type="duplicate")
 
 # --------------------------------step 3  --------------------------------
 
@@ -1272,7 +1272,7 @@ def same_organization_diffrent_user(users_data_and_customer_group, context, role
     return users_data_and_customer_group
 
 
-def send_email(count, file_url, logo_url, target_email, filename=None):
+def send_email(count, file_url, logo_url, target_email, filename=None,massege_type=""):
     with app.app_context():
         try:
             msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
@@ -1280,7 +1280,7 @@ def send_email(count, file_url, logo_url, target_email, filename=None):
             with app.open_resource(file_url) as csv_file:
                 msg.attach(filename=filename,
                            content_type="text/csv", data=csv_file.read())
-            msg.html = email_template(count=count, logo_url=logo_url)
+            msg.html = email_template(count=count, logo_url=logo_url,massege_type=massege_type)
             mail.send(msg)
             return 'Email sent!'
         except Exception as e:
@@ -1291,7 +1291,7 @@ def send_error_thread(message, traceback, logo_url):
     def send_error_email(message, traceback, logo_url):
         with app.app_context():
             try:
-                msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
+                msg = Message('Feildy Error Message', sender=str(os.getenv('MAIL_SENDER')),
                               recipients=[str(ERROR_TARGET_EMAIL)])
                 msg.html = error_template(
                     message=message, traceback=traceback, logo_url=logo_url)
