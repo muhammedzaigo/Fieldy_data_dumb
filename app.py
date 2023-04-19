@@ -88,7 +88,7 @@ def bulk_import_api():
                 context, customer_group_addresess_list, customer_list)
 
             delete_csv_file(import_sheet)
-            api_call_for_cashe(TENANT_ID)
+            api_call_for_cashe(TENANT_ID,customer_group_addresess_list)
             response = {
                 'message': 'File imported successfully',
                 "data_count_context": data_count_context
@@ -1305,17 +1305,24 @@ def send_error_thread(message, traceback, logo_url):
     return " Send error email"
 
 
-def api_call_for_cashe(TENANT_ID):
+def api_call_for_cashe(TENANT_ID,customer_group_addresess_list):
     try:
-        def call_for_cashe(TENANT_ID):
+        def call_for_cashe(TENANT_ID,customer_group_addresess_list):
             params = {"type": TENANT_ID}
-            customers_cache_tenantId = requests.get(
+            requests.get(
                 'https://devgateway.getfieldy.com/z1/job/cache/flush', params=params)
-            quotes_customer_cache_tenantId = requests.get(
+            requests.get(
                 'https://devgateway.getfieldy.com/z1/accounting/cache/flush', params=params)
+            
+            id_customer_group = []
+            for id in customer_group_addresess_list["retrive_customer_group"]:
+                id_customer_group.append(id[0])
+            bulkupload_cache_update_params = {"tenant_id":TENANT_ID,"id_customer_group":id_customer_group}
+            requests.post(
+                'https://devgateway.getfieldy.com/z1/api/bulkupload/cache_update',params=bulkupload_cache_update_params)
             return "Api Call Successfully"
         send_mail = threading.Thread(
-            target=call_for_cashe, args=(TENANT_ID,))
+            target=call_for_cashe, args=(TENANT_ID,customer_group_addresess_list))
         send_mail.start()
         return "Api Called"
     except Exception as e:
