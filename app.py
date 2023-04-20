@@ -97,7 +97,8 @@ def bulk_import_api():
             response = {
                 'message': 'File imported successfully',
                 "data_count_context": data_count_context,
-                "customer_group_ids":customer_group_ids
+                "customer_group_ids":customer_group_ids,
+                "tenant_id":TENANT_ID
             }
             response = make_response(jsonify(response), 200)
             response.headers["Content-Type"] = "application/json"
