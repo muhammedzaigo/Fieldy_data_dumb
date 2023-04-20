@@ -89,9 +89,15 @@ def bulk_import_api():
 
             delete_csv_file(import_sheet)
             api_call_for_cashe(TENANT_ID,customer_group_addresess_list)
+            
+            customer_group_ids = []
+            for id in customer_group_addresess_list["retrive_customer_group"]:
+                customer_group_ids.append(id[0])
+                
             response = {
                 'message': 'File imported successfully',
-                "data_count_context": data_count_context
+                "data_count_context": data_count_context,
+                "customer_group_ids":customer_group_ids
             }
             response = make_response(jsonify(response), 200)
             response.headers["Content-Type"] = "application/json"
