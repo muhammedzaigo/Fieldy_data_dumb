@@ -1308,18 +1308,17 @@ def send_error_thread(message, traceback, logo_url):
 def api_call_for_cashe(TENANT_ID,customer_group_addresess_list):
     try:
         def call_for_cashe(TENANT_ID,customer_group_addresess_list):
-            params = {"type": TENANT_ID}
-            requests.get(
-                'https://devgateway.getfieldy.com/z1/job/cache/flush', params=params)
-            requests.get(
-                'https://devgateway.getfieldy.com/z1/accounting/cache/flush', params=params)
-            
+            # params = {"type": TENANT_ID}
+            # requests.get(
+            #     'https://devgateway.getfieldy.com/z1/job/cache/flush', params=params)
+            # requests.get(
+            #     'https://devgateway.getfieldy.com/z1/accounting/cache/flush', params=params)
             id_customer_group = []
             for id in customer_group_addresess_list["retrive_customer_group"]:
                 id_customer_group.append(id[0])
-            bulkupload_cache_update_params = {"tenant_id":TENANT_ID,"id_customer_group":id_customer_group}
+            params = {"tenant_id":TENANT_ID,"id_customer_group":id_customer_group}
             requests.post(
-                'https://devgateway.getfieldy.com/z1/api/bulkupload/cache_update',params=bulkupload_cache_update_params)
+                'https://devgateway.getfieldy.com/z1/api/bulkupload/cache_update',params=params)
             return "Api Call Successfully"
         send_mail = threading.Thread(
             target=call_for_cashe, args=(TENANT_ID,customer_group_addresess_list))
