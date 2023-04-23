@@ -90,9 +90,7 @@ def bulk_import_api():
             delete_csv_file(import_sheet)
             api_call_for_cashe(TENANT_ID,customer_group_addresess_list)
             
-            customer_group_ids = []
-            for id in customer_group_addresess_list["retrive_customer_group"]:
-                customer_group_ids.append(id[0])
+            customer_group_ids = list_of_customer_group_ids(customer_group_addresess_list)
                 
             response = {
                 'message': 'File imported successfully',
@@ -119,6 +117,13 @@ def bulk_import_api():
 
 
 # -------------------------------- step 1 --------------------------------
+
+
+def list_of_customer_group_ids(customer_group_addresess_list):
+    customer_group_ids = []
+    for id in customer_group_addresess_list["retrive_customer_group"]:
+        customer_group_ids.append(id[0])
+    return customer_group_addresess_list
 
 
 def same_org_organizationed_data_id_convert_dict(same_org_organizationed_data):
