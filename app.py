@@ -1,3 +1,4 @@
+import pymysql
 from utils.utils import *
 from utils.query import *
 from dotenv import load_dotenv
@@ -10,8 +11,18 @@ from flask_mail import Mail, Message
 from template.email import email_template, error_template
 import traceback
 from flask_cors import CORS
+from database_connection import *
+
 
 app = Flask(__name__, instance_relative_config=True)
+
+# db_config = {
+#     "host": "localhost",
+#     "user": "root",
+#     "port":"3306",
+#     "password": "",
+#     "database": "fieldy_dev",
+# }
 
 CORS(app)
 load_dotenv()
@@ -29,7 +40,49 @@ if ERROR_TARGET_EMAIL is None:
 
 mail = Mail(app)
 
+# product bulk upload code
+@app.route("/api/product_bulk_upload", methods=['POST'])
+def bulk_import_api_1():
+    if request.method == 'POST':  
 
+        try:
+            if 'product_bulk' not in request.files:
+                return make_response(jsonify({'message': 'No file uploaded'}), 400)
+            file = request.files['product_bulk']
+            tenent_id = request.form.get('tenant_id')
+            excel_data = pd.read_excel(file)
+            excel_data = excel_data.to_dict(orient="records")
+
+            response_data = []
+            for row in excel_data:
+                query_item = '''INSERT INTO `items` (`name`,`description`,`sku`,`hsn`,`id_tenant`,`current_stock`,`low_stock`) VALUES (%s,%s,%s,%s,%s,%s,%s)'''
+                val = (row["Product Name"], row["Description"],row['SKU'],row['HSN'],str(tenent_id),row['Available Quantity'],row['Low Stock Threshold'])
+                new_id = insert_update_delete(query_item, val)
+                query_price = '''INSERT INTO `item_prices` (`item_id`,`price`) VALUES (%s,%s)'''
+                val_price = (new_id, row['Price'])
+                insert_update_delete(query_price, val_price)
+            response = {
+                'message': 'Product imported successfully',
+                "tenant_id":tenent_id
+            }
+            response = make_response(jsonify(response), 200)
+            response.headers["Content-Type"] = "application/json"
+            return response    
+        except Exception as e:
+            response = {
+                'message': 'File imported  Failed',
+                "error": {
+                    "message": str(e),
+                    "traceback": traceback.format_exc()
+                }
+            }
+            send_error_thread(message=response["error"]["message"], traceback=response["error"]
+                              ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
+            response = make_response(jsonify(response), 400)
+            response.headers["Content-Type"] = "application/json"
+            return response      
+       
+# product bulk upload end
 @app.route("/api/bulk_import", methods=['POST'])
 def bulk_import_api():
     if request.method == 'POST':
@@ -1348,5 +1401,9 @@ def api_call_for_cashe(TENANT_ID,customer_group_addresess_list):
                           ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
 
 
+
+
+
+
 if __name__ == "__main__":
-    app.run(debug=False, host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0',port=1200)
