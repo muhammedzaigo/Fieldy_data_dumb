@@ -66,6 +66,50 @@ def send_error_thread(message, traceback, logo_url):
     send_mail.start()
     return " Send error email"
 
+# product bulk upload code
+@app.route("/api/product_bulk_upload", methods=['POST'])
+def bulk_import_api_1():
+    if request.method == 'POST':  
+
+        try:
+            if 'product_bulk' not in request.files:
+                return make_response(jsonify({'message': 'No file uploaded'}), 400)
+            file = request.files['product_bulk']
+            tenent_id = request.form.get('tenant_id')
+            excel_data = pd.read_excel(file)
+            excel_data = excel_data.to_dict(orient="records")
+
+            response_data = []
+            for row in excel_data:
+                query_item = '''INSERT INTO `items` (`name`,`description`,`sku`,`hsn`,`id_tenant`,`current_stock`,`low_stock`) VALUES (%s,%s,%s,%s,%s,%s,%s)'''
+                val = (row["Product Name"], row["Description"],row['SKU'],row['HSN'],str(tenent_id),row['Available Quantity'],row['Low Stock Threshold'])
+                new_id = insert_update_delete(query_item, val)
+                query_price = '''INSERT INTO `item_prices` (`item_id`,`price`) VALUES (%s,%s)'''
+                val_price = (new_id, row['Price'])
+                insert_update_delete(query_price, val_price)
+            response = {
+                'message': 'Product imported successfully',
+                "tenant_id":tenent_id
+            }
+            response = make_response(jsonify(response), 200)
+            response.headers["Content-Type"] = "application/json"
+            return response    
+        except Exception as e:
+            response = {
+                'message': 'File imported  Failed',
+                "error": {
+                    "message": str(e),
+                    "traceback": traceback.format_exc()
+                }
+            }
+            send_error_thread(message=response["error"]["message"], traceback=response["error"]
+                              ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
+            response = make_response(jsonify(response), 400)
+            response.headers["Content-Type"] = "application/json"
+            return response      
+       
+# product bulk upload end
+
 
 @app.route("/api/bulk_import", methods=['POST'])
 def bulk_import_api():
