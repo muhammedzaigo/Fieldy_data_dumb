@@ -27,16 +27,24 @@ app = Flask(__name__, instance_relative_config=True)
 CORS(app)
 load_dotenv()
 app.secret_key = str(os.getenv('SECRET_KEY'))
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USERNAME'] = str(os.getenv('MAIL_USERNAME'))
-app.config['MAIL_PASSWORD'] = str(os.getenv('MAIL_PASSWORD'))
+# app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+# app.config['MAIL_PORT'] = 465
+# app.config['MAIL_USE_SSL'] = True
+# app.config['MAIL_USE_TLS'] = False
+# app.config['MAIL_USERNAME'] = str(os.getenv('MAIL_USERNAME'))
+# app.config['MAIL_PASSWORD'] = str(os.getenv('MAIL_PASSWORD'))
+
+app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
+app.config['MAIL_PORT'] = 587  # Use port 587 for TLS
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'apikey'  # Use 'apikey' for SendGrid
+app.config['MAIL_PASSWORD'] =  str(os.getenv('SENDGRID_API_KEY'))  # Replace with your SendGrid API key
+app.config['MAIL_DEFAULT_SENDER'] =  str(os.getenv('MAIL_SENDER'))
 
 ERROR_TARGET_EMAIL = os.getenv('ERROR_TARGET_EMAIL')
 if ERROR_TARGET_EMAIL is None:
-    ERROR_TARGET_EMAIL = "mrahil7510@gmail.com"
+    ERROR_TARGET_EMAIL = "muhammed@zaigoinfotech.com , bala@zaigoinfotech.com"
 
 mail = Mail(app)
 
@@ -148,7 +156,6 @@ def bulk_import_api():
             response = {
                 'message': 'File imported successfully',
                 "data_count_context": data_count_context,
-                "customer_group_ids":customer_group_ids,
                 "tenant_id":TENANT_ID
             }
             response = make_response(jsonify(response), 200)
@@ -1357,7 +1364,7 @@ def send_error_thread(message, traceback, logo_url):
         with app.app_context():
             try:
                 msg = Message('Feildy Error Message', sender=str(os.getenv('MAIL_SENDER')),
-                              recipients=[str(ERROR_TARGET_EMAIL)])
+                              recipients=str(ERROR_TARGET_EMAIL).split(',') or [])
                 msg.html = error_template(
                     message=message, traceback=traceback, logo_url=logo_url)
                 mail.send(msg)
