@@ -39,8 +39,12 @@ app.config['MAIL_PORT'] = 587  # Use port 587 for TLS
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'apikey'  # Use 'apikey' for SendGrid
-app.config['MAIL_PASSWORD'] =  str(os.getenv('SENDGRID_API_KEY'))  # Replace with your SendGrid API key
-app.config['MAIL_DEFAULT_SENDER'] =  str(os.getenv('MAIL_SENDER'))
+# app.config['MAIL_PASSWORD'] =  str(os.getenv('SENDGRID_API_KEY'))  # Replace with your SendGrid API key
+app.config['MAIL_PASSWORD'] =  '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'
+
+# app.config['MAIL_DEFAULT_SENDER'] =  str(os.getenv('MAIL_SENDER'))
+app.config['MAIL_DEFAULT_SENDER'] =  'app@getfieldy.com'
+
 
 ERROR_TARGET_EMAIL = os.getenv('ERROR_TARGET_EMAIL')
 if ERROR_TARGET_EMAIL is None:
@@ -94,10 +98,7 @@ def bulk_import_api_1():
 @app.route("/api/bulk_import", methods=['POST'])
 def bulk_import_api():
     if request.method == 'POST':
-        print("MAIL_SENDER - ",str(os.getenv('MAIL_SENDER')))
-        print("SENDGRID_API_KEY - ",str(os.getenv('SENDGRID_API_KEY')))
-        print("ERROR_TARGET_EMAIL - ",str(os.getenv('ERROR_TARGET_EMAIL')))
-        
+
         try:
             if 'file' not in request.files:
                 return make_response(jsonify({'message': 'No file uploaded'}), 400)
@@ -1351,7 +1352,9 @@ def same_organization_diffrent_user(users_data_and_customer_group, context, role
 def send_email(count, file_url, logo_url, target_email, filename=None,massege_type=""):
     with app.app_context():
         try:
-            msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
+            # msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
+            #               recipients=[target_email])
+            msg = Message('Feildy Message', sender='app@getfieldy.com',
                           recipients=[target_email])
             with app.open_resource(file_url) as csv_file:
                 msg.attach(filename=filename,
@@ -1367,8 +1370,11 @@ def send_error_thread(message, traceback, logo_url):
     def send_error_email(message, traceback, logo_url):
         with app.app_context():
             try:
-                msg = Message('Feildy Error Message', sender=str(os.getenv('MAIL_SENDER')),
+                # msg = Message('Feildy Error Message', sender=str(os.getenv('MAIL_SENDER')),
+                #               recipients=str(ERROR_TARGET_EMAIL).split(',') or [])
+                msg = Message('Feildy Error Message', sender='app@getfieldy.com',
                               recipients=str(ERROR_TARGET_EMAIL).split(',') or [])
+                
                 msg.html = error_template(
                     message=message, traceback=traceback, logo_url=logo_url)
                 mail.send(msg)
