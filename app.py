@@ -94,6 +94,10 @@ def bulk_import_api_1():
 @app.route("/api/bulk_import", methods=['POST'])
 def bulk_import_api():
     if request.method == 'POST':
+        print("MAIL_SENDER - ",str(os.getenv('MAIL_SENDER')))
+        print("SENDGRID_API_KEY - ",str(os.getenv('SENDGRID_API_KEY')))
+        print("ERROR_TARGET_EMAIL - ",str(os.getenv('ERROR_TARGET_EMAIL')))
+        
         try:
             if 'file' not in request.files:
                 return make_response(jsonify({'message': 'No file uploaded'}), 400)
