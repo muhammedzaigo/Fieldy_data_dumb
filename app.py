@@ -39,12 +39,10 @@ app.config['MAIL_PORT'] = 587  # Use port 587 for TLS
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'apikey'  # Use 'apikey' for SendGrid
-# app.config['MAIL_PASSWORD'] =  str(os.getenv('SENDGRID_API_KEY'))  # Replace with your SendGrid API key
-app.config['MAIL_PASSWORD'] =  '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'
+app.config['MAIL_PASSWORD'] = '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' # str(os.getenv('SENDGRID_API_KEY'))
+app.config['MAIL_DEFAULT_SENDER'] =  'app@getfieldy.com' # str(os.getenv('MAIL_SENDER'))
 
-# app.config['MAIL_DEFAULT_SENDER'] =  str(os.getenv('MAIL_SENDER'))
-app.config['MAIL_DEFAULT_SENDER'] =  'app@getfieldy.com'
-
+SENDER = 'app@getfieldy.com'
 
 ERROR_TARGET_EMAIL = os.getenv('ERROR_TARGET_EMAIL')
 if ERROR_TARGET_EMAIL is None:
@@ -1352,9 +1350,9 @@ def same_organization_diffrent_user(users_data_and_customer_group, context, role
 def send_email(count, file_url, logo_url, target_email, filename=None,massege_type=""):
     with app.app_context():
         try:
-            # msg = Message('Feildy Message', sender=str(os.getenv('MAIL_SENDER')),
+            # msg = Message('Feildy Message', sender=str(os.getenv('MAIL_USERNAME')),
             #               recipients=[target_email])
-            msg = Message('Feildy Message', sender='app@getfieldy.com',
+            msg = Message('Feildy Message',
                           recipients=[target_email])
             with app.open_resource(file_url) as csv_file:
                 msg.attach(filename=filename,
@@ -1363,6 +1361,7 @@ def send_email(count, file_url, logo_url, target_email, filename=None,massege_ty
             mail.send(msg)
             return 'Email sent!'
         except Exception as e:
+            print(str(e))
             return f" email : {str(e)}"
 
 
@@ -1370,9 +1369,9 @@ def send_error_thread(message, traceback, logo_url):
     def send_error_email(message, traceback, logo_url):
         with app.app_context():
             try:
-                # msg = Message('Feildy Error Message', sender=str(os.getenv('MAIL_SENDER')),
+                # msg = Message('Feildy Error Message', sender=str(os.getenv('MAIL_USERNAME')),
                 #               recipients=str(ERROR_TARGET_EMAIL).split(',') or [])
-                msg = Message('Feildy Error Message', sender='app@getfieldy.com',
+                msg = Message('Feildy Error Message',
                               recipients=str(ERROR_TARGET_EMAIL).split(',') or [])
                 
                 msg.html = error_template(
