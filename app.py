@@ -39,9 +39,8 @@ app.config['MAIL_PORT'] = 587  # Use port 587 for TLS
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'apikey'  # Use 'apikey' for SendGrid
-app.config['MAIL_PASSWORD'] = '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' # str(os.getenv('SENDGRID_API_KEY'))
-app.config['MAIL_DEFAULT_SENDER'] =  'app@getfieldy.com' # str(os.getenv('MAIL_SENDER'))
-
+app.config['MAIL_PASSWORD'] = str(os.getenv('SENDGRID_API_KEY'))
+app.config['MAIL_DEFAULT_SENDER'] =  str(os.getenv('MAIL_SENDER'))
 SENDER = 'app@getfieldy.com'
 
 ERROR_TARGET_EMAIL = os.getenv('ERROR_TARGET_EMAIL')
