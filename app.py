@@ -41,6 +41,40 @@ if ERROR_TARGET_EMAIL is None:
 mail = Mail(app)
 
 # product bulk upload code
+def product_bulk_validation(sheet, orient="records",unique_values=[]):
+    try:
+        import_sheet = sheet.read()
+        file_encoding = chardet.detect(import_sheet)['encoding']
+        import_sheet = import_sheet.decode(file_encoding)
+        df = pd.read_csv(io.StringIO(import_sheet))
+        df.columns = df.columns.str.replace('\n', '')
+        df.columns = map(str.lower, df.columns)
+        df.columns = map(str.strip, df.columns)
+        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        df = df.fillna('')
+        cleaned_data = df.drop_duplicates(keep='first')
+        if len(unique_values) > 0:
+            for unique in unique_values:
+                if unique in df.columns:
+                    cleaned_data = cleaned_data.drop_duplicates(subset=[unique], keep="first")
+        cleaned_data = cleaned_data.to_dict(orient=orient)
+    except:
+        df = pd.read_excel(sheet)
+        df.columns = df.columns.str.replace('\n', '')
+        df.columns = map(str.lower, df.columns)
+        df.columns = map(str.strip, df.columns)
+        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        df = df.fillna('')
+        cleaned_data = df.drop_duplicates(keep='first')
+        if len(unique_values) > 0:
+            for unique in unique_values:
+                if unique in df.columns:
+                    cleaned_data = cleaned_data.duplicated(subset=[unique], keep="first")
+        cleaned_data = cleaned_data.to_dict(orient=orient)
+    return cleaned_data, df
+
+
+
 @app.route("/api/product_bulk_upload", methods=['POST'])
 def bulk_import_api_1():
     if request.method == 'POST':  
@@ -55,8 +89,8 @@ def bulk_import_api_1():
 
             response_data = []
             for row in excel_data:
-                query_item = '''INSERT INTO `items` (`name`,`description`,`sku`,`hsn`,`id_tenant`,`current_stock`,`low_stock`) VALUES (%s,%s,%s,%s,%s,%s,%s)'''
-                val = (row["Product Name"], row["Description"],row['SKU'],row['HSN'],str(tenent_id),row['Available Quantity'],row['Low Stock Threshold'])
+                query_item = '''INSERT INTO `items` (`name`,`description`,`sku`,`hsn`,`id_tenant`,`current_stock`,`low_stock`,`is_product`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)'''
+                val = (row["Product Name"], row["Description"],row['SKU'],row['HSN'],str(tenent_id),row['Available Quantity'],row['Low Stock Threshold'],1)
                 new_id = insert_update_delete(query_item, val)
                 query_price = '''INSERT INTO `item_prices` (`item_id`,`price`) VALUES (%s,%s)'''
                 val_price = (new_id, row['Price'])
