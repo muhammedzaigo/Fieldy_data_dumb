@@ -1349,6 +1349,9 @@ def same_organization_diffrent_user(users_data_and_customer_group, context, role
 def send_email(count, file_url, logo_url, target_email, filename=None,massege_type=""):
     with app.app_context():
         try:
+            print("str(os.getenv('SENDGRID_API_KEY'))------",str(os.getenv('SENDGRID_API_KEY')))
+            print("str(os.getenv('MAIL_SENDER'))------",str(os.getenv('MAIL_SENDER')))
+            
             # msg = Message('Feildy Message', sender=str(os.getenv('MAIL_USERNAME')),
             #               recipients=[target_email])
             msg = Message('Feildy Message',
