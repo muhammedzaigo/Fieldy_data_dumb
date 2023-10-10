@@ -127,8 +127,8 @@ def product_bulk_upload():
                     "traceback": traceback.format_exc()
                 }
             }
-            # send_error_thread(message=response["error"]["message"], traceback=response["error"]
-            #                   ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
+            send_error_thread(message=response["error"]["message"], traceback=response["error"]
+                              ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
             response = make_response(jsonify(response), 400)
             response.headers["Content-Type"] = "application/json"
             return response      
