@@ -101,11 +101,16 @@ def product_bulk_upload():
                     product_import_data_list.append(validate_context["product_import_data"])
                 if len(validate_context["price_import_data"]) != 0:
                     price_import_data_list.append(validate_context["price_import_data"])
-            
-            # thread = threading.Thread(target=product_bulk_import_function, args=(product_import_data_list, price_import_data_list, context))
-            # thread.start()
-            product_already_exists_field_name = get_product_field_names(product_already_exists_list[0])
-            send_product_skipped_data(product_already_exists_field_name, product_already_exists_list, target_email, len(product_already_exists_list))
+            thread = threading.Thread(target=product_bulk_import_function, args=(product_import_data_list, price_import_data_list, context))
+            thread.start()
+            if len(product_already_exists_list) > 0:
+                product_already_exists_field_name = get_product_field_names(product_already_exists_list[0])
+                thread1 = threading.Thread(target=send_product_skipped_data, args=(product_already_exists_field_name, product_already_exists_list, target_email, len(product_already_exists_list),'existing_product'))
+                thread1.start()
+            if len(skipped_rows_list) > 0:
+                skipped_rows_list_field_name = get_product_field_names(skipped_rows_list[0])
+                thread2 = threading.Thread(target=send_product_skipped_data, args=(skipped_rows_list_field_name, skipped_rows_list, target_email, len(skipped_rows_list),'skipped_product'))
+                thread2.start()      
             response = {
                 'message': 'Product imported successfully',
                 "tenant_id":tenent_id,
@@ -134,11 +139,11 @@ def get_product_field_names(import_data_list):
         column_names.append(column_name)
     return column_names
 
-def send_product_skipped_data(field_names, skip_data, target_email, skip_data_count):
-    csv_name = f"product_skipped_data_"+datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+def send_product_skipped_data(field_names, skip_data, target_email, skip_data_count,csv_name):
+    csv_name = f"{csv_name}_"+datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     try:
         df = pd.DataFrame(skip_data, columns=field_names)
-        df.to_csv(f'product_skip_data_sheets/{csv_name}.csv', index=False)
+        df.to_csv(f'invalid_data_sheets/{csv_name}.csv', index=False)
     except Exception as e:
         print("Error", str(e))
     send_email(count=skip_data_count, file_url=os.path.join(os.path.abspath(os.path.dirname(
