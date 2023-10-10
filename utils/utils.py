@@ -416,3 +416,37 @@ def delete_csv_file(import_sheet):
         if os.path.exists(csv_filename):
             os.remove(csv_filename)
         return "Successfully deleted"
+
+
+
+def import_sheet_convert_to_csv(sheet, orient="records", unique_values=[]):
+    try:
+        import_sheet = sheet.read()
+        file_encoding = chardet.detect(import_sheet)['encoding']
+        import_sheet = import_sheet.decode(file_encoding)
+        df = pd.read_csv(io.StringIO(import_sheet))
+        df.columns = df.columns.str.replace('\n', '')
+        df.columns = map(str.lower, df.columns)
+        df.columns = map(str.strip, df.columns)
+        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        df = df.fillna('')
+        cleaned_data = df.drop_duplicates(keep='first')
+        if len(unique_values) > 0:
+            for unique in unique_values:
+                if unique in df.columns:
+                    cleaned_data = cleaned_data.drop_duplicates(subset=[unique], keep="first")
+        cleaned_data_dict = cleaned_data.to_dict(orient=orient)
+    except:
+        df = pd.read_excel(sheet)
+        df.columns = df.columns.str.replace('\n', '')
+        df.columns = map(str.lower, df.columns)
+        df.columns = map(str.strip, df.columns)
+        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        df = df.fillna('')
+        cleaned_data = df.drop_duplicates(keep='first')
+        if len(unique_values) > 0:
+            for unique in unique_values:
+                if unique in df.columns:
+                    cleaned_data = cleaned_data.duplicated(subset=[unique], keep="first")
+        cleaned_data_dict = cleaned_data.to_dict(orient=orient)
+    return cleaned_data_dict, df

@@ -1,4 +1,6 @@
 import pymysql
+from utils.product_app import product_bulk_import_function, read_single_product
+from utils.product_utils import add_validations_in_product_json_format
 from utils.utils import *
 from utils.query import *
 from dotenv import load_dotenv
@@ -12,9 +14,11 @@ from template.email import email_template, error_template
 import traceback
 from flask_cors import CORS
 from database_connection import *
-
+# from api.bulk_insert import product_bulk_upload
 
 app = Flask(__name__, instance_relative_config=True)
+
+# app.register_blueprint(product_bulk_upload)
 
 # db_config = {
 #     "host": "localhost",
@@ -49,64 +53,63 @@ if ERROR_TARGET_EMAIL is None:
 
 mail = Mail(app)
 
-# product bulk upload code
-def product_bulk_validation(sheet, orient="records",unique_values=[]):
-    try:
-        import_sheet = sheet.read()
-        file_encoding = chardet.detect(import_sheet)['encoding']
-        import_sheet = import_sheet.decode(file_encoding)
-        df = pd.read_csv(io.StringIO(import_sheet))
-        df.columns = df.columns.str.replace('\n', '')
-        df.columns = map(str.lower, df.columns)
-        df.columns = map(str.strip, df.columns)
-        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        df = df.fillna('')
-        cleaned_data = df.drop_duplicates(keep='first')
-        if len(unique_values) > 0:
-            for unique in unique_values:
-                if unique in df.columns:
-                    cleaned_data = cleaned_data.drop_duplicates(subset=[unique], keep="first")
-        cleaned_data = cleaned_data.to_dict(orient=orient)
-    except:
-        df = pd.read_excel(sheet)
-        df.columns = df.columns.str.replace('\n', '')
-        df.columns = map(str.lower, df.columns)
-        df.columns = map(str.strip, df.columns)
-        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        df = df.fillna('')
-        cleaned_data = df.drop_duplicates(keep='first')
-        if len(unique_values) > 0:
-            for unique in unique_values:
-                if unique in df.columns:
-                    cleaned_data = cleaned_data.duplicated(subset=[unique], keep="first")
-        cleaned_data = cleaned_data.to_dict(orient=orient)
-    return cleaned_data, df
 
-
-
-@app.route("/api/product_bulk_upload", methods=['POST'])
-def bulk_import_api_1():
+@app.route("/api/product_bulk_upload/", methods=['POST'])
+def product_bulk_upload():
     if request.method == 'POST':  
-
         try:
-            if 'product_bulk' not in request.files:
+            if 'file' not in request.files:
                 return make_response(jsonify({'message': 'No file uploaded'}), 400)
-            file = request.files['product_bulk']
+            file = request.files['file']
             tenent_id = request.form.get('tenant_id')
-            excel_data = pd.read_excel(file)
-            excel_data = excel_data.to_dict(orient="records")
-
-            response_data = []
-            for row in excel_data:
-                query_item = '''INSERT INTO `items` (`name`,`description`,`sku`,`hsn`,`id_tenant`,`current_stock`,`low_stock`,`is_product`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)'''
-                val = (row["Product Name"], row["Description"],row['SKU'],row['HSN'],str(tenent_id),row['Available Quantity'],row['Low Stock Threshold'],1)
-                new_id = insert_update_delete(query_item, val)
-                query_price = '''INSERT INTO `item_prices` (`item_id`,`price`) VALUES (%s,%s)'''
-                val_price = (new_id, row['Price'])
-                insert_update_delete(query_price, val_price)
+            json_format = request.form.get('json_format', None)
+            target_email = request.form.get('target_email', None)
+            created_by = request.form.get('created_by', None)
+            if tenent_id == None or json_format == None or created_by == None:
+                return make_response(jsonify({'message': 'tenant_id, json_format, created_by is required fields'}), 400)
+            import_sheet_convert, df = import_sheet_convert_to_csv(file)
+            if df.empty:
+                return make_response(jsonify({"message": f"The '{file.filename}' file is empty or contains only empty rows and columns."},400))
+            json_format = json.loads(json_format)
+            context = {
+                "TENANT_ID": tenent_id,
+                "created_by": created_by,
+                "which_user": 3,
+                "filename": file.filename
+            }
+            json_format = add_validations_in_product_json_format(json_format)
+            existing_products = retrive_products_by_tenant(tenent_id)
+            bulk_insert_id = get_bulk_insert_id(context, insert=True)
+            context.update({'bulk_insert_id': bulk_insert_id})
+            
+            product_already_exists_list = []
+            skipped_rows_list = []
+            product_import_data_list = []
+            price_import_data_list = []
+            for line_index, single_row in enumerate(import_sheet_convert,1):
+                validate_context = read_single_product(line_index, single_row, json_format, existing_products, context)
+                if validate_context["product_already_exists"]:
+                    single_row["message"] = "Product already exists"
+                    product_already_exists_list.append(single_row)
+                if validate_context["product_name_is_empty"]:
+                    single_row["row_index"] = line_index
+                    single_row["message"] = "Product is Required"
+                    skipped_rows_list.append(single_row)
+                if len(validate_context["skipped_data"]) != 0:
+                    skipped_rows_list.append(validate_context["skipped_data"])
+                if len(validate_context["product_import_data"]) != 0:
+                    product_import_data_list.append(validate_context["product_import_data"])
+                if len(validate_context["price_import_data"]) != 0:
+                    price_import_data_list.append(validate_context["price_import_data"])
+            
+            # thread = threading.Thread(target=product_bulk_import_function, args=(product_import_data_list, price_import_data_list, context))
+            # thread.start()
+            product_already_exists_field_name = get_product_field_names(product_already_exists_list[0])
+            send_product_skipped_data(product_already_exists_field_name, product_already_exists_list, target_email, len(product_already_exists_list))
             response = {
                 'message': 'Product imported successfully',
-                "tenant_id":tenent_id
+                "tenant_id":tenent_id,
+                "bulk_insert_id":bulk_insert_id
             }
             response = make_response(jsonify(response), 200)
             response.headers["Content-Type"] = "application/json"
@@ -119,13 +122,29 @@ def bulk_import_api_1():
                     "traceback": traceback.format_exc()
                 }
             }
-            send_error_thread(message=response["error"]["message"], traceback=response["error"]
-                              ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
+            # send_error_thread(message=response["error"]["message"], traceback=response["error"]
+            #                   ["traceback"], logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp")
             response = make_response(jsonify(response), 400)
             response.headers["Content-Type"] = "application/json"
             return response      
-       
-# product bulk upload end
+
+def get_product_field_names(import_data_list):
+    column_names = []
+    for column_name in import_data_list.keys():
+        column_names.append(column_name)
+    return column_names
+
+def send_product_skipped_data(field_names, skip_data, target_email, skip_data_count):
+    csv_name = f"product_skipped_data_"+datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    try:
+        df = pd.DataFrame(skip_data, columns=field_names)
+        df.to_csv(f'product_skip_data_sheets/{csv_name}.csv', index=False)
+    except Exception as e:
+        print("Error", str(e))
+    send_email(count=skip_data_count, file_url=os.path.join(os.path.abspath(os.path.dirname(
+        __file__)), 'invalid_data_sheets', f'{csv_name}.csv'), logo_url="https://getfieldy.com/wp-content/uploads/2023/01/logo.webp", target_email=target_email, filename=f"{csv_name}.csv",massege_type="skipped")
+
+
 @app.route("/api/bulk_import", methods=['POST'])
 def bulk_import_api():
     if request.method == 'POST':
@@ -187,7 +206,7 @@ def bulk_import_api():
             delete_csv_file(import_sheet)
             api_call_for_cashe(TENANT_ID,customer_group_addresess_list)
             
-            customer_group_ids = list_of_customer_group_ids(customer_group_addresess_list)
+            # customer_group_ids = list_of_customer_group_ids(customer_group_addresess_list)
                 
             response = {
                 'message': 'File imported successfully',

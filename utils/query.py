@@ -12,8 +12,10 @@ def get_bulk_insert_id(context, insert=False):
     TENANT_ID = context["TENANT_ID"]
     if which_user == 2:
         entity = "organization"
-    else:
+    elif which_user == 1:
         entity = "contact"
+    else:
+        entity = "products"
 
     bulk_insert_id: int = 0
     try:
@@ -313,3 +315,34 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
     except Exception as e:
         print(f"get_bulk_retrive_using_tenant_id : {str(e)}")
     return return_context
+
+
+## product query
+
+def retrive_products_by_tenant(tenant):
+    product_names = []
+    try:
+        qry = '''SELECT `name` FROM `items` WHERE `id_tenant` = %s'''
+        existing_products = select_filter(qry, (tenant))
+        product_names = []
+        for name in existing_products:
+            try:
+                name = str(name[0]).lower().strip()
+                product_names.append(name)
+            except:
+                pass
+        product_names = list(set(product_names))
+    except Exception as e:
+        print(f"product : {str(e)}")
+    return product_names
+
+
+def retrive_products_use_bulk_insert_id(bulk_insert_id):
+    products : tuple = ()
+    try:
+        qry = ''' SELECT `id_item`, `bulk_insert_row_number`  FROM `items` WHERE `bulk_insert_id` = %s'''
+        val = (bulk_insert_id)
+        products = select_filter(qry, val)
+    except Exception as e:
+        print(f"items table : {str(e)}")
+    return products
