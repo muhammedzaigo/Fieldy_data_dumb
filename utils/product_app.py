@@ -105,7 +105,7 @@ def product_bulk_import_function(product_import_data_list, price_import_data_lis
             table_name ,column_names = get_product_column_names(price_import_data_list[0])
             column_values = get_product_column_values(price_import_data_list)
             bulk_insert_dynamic(table_name, column_names, column_values, insert=True)
-    return 
+    return "Successfully inserted"
 
 
 def get_product_column_names(import_data_list):
