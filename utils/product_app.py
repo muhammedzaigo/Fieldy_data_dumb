@@ -93,16 +93,18 @@ def for_dumbed_data_fun(value : str, table_column_slug : str):
 
 
 def product_bulk_import_function(product_import_data_list, price_import_data_list,context):
-    table_name ,column_names = get_product_column_names(product_import_data_list[0])
-    column_values = get_product_column_values(product_import_data_list)
-    bulk_insert_dynamic(table_name, column_names, column_values, insert=True)
-    bulk_insert_id = context.get('bulk_insert_id')
-    retrive_products = retrive_products_use_bulk_insert_id(bulk_insert_id)
-    key_value_products_dict = retrive_products_convert_to_key_value_pair(retrive_products)
-    price_import_data_list = priceitems_add_product_id_by_using_row_number(price_import_data_list, key_value_products_dict)
-    table_name ,column_names = get_product_column_names(price_import_data_list[0])
-    column_values = get_product_column_values(price_import_data_list)
-    bulk_insert_dynamic(table_name, column_names, column_values, insert=True)
+    if len(product_import_data_list) > 0:
+        table_name ,column_names = get_product_column_names(product_import_data_list[0])
+        column_values = get_product_column_values(product_import_data_list)
+        bulk_insert_dynamic(table_name, column_names, column_values, insert=True)
+        bulk_insert_id = context.get('bulk_insert_id')
+        retrive_products = retrive_products_use_bulk_insert_id(bulk_insert_id)
+        key_value_products_dict = retrive_products_convert_to_key_value_pair(retrive_products)
+        if len(price_import_data_list) > 0:
+            price_import_data_list = priceitems_add_product_id_by_using_row_number(price_import_data_list, key_value_products_dict)
+            table_name ,column_names = get_product_column_names(price_import_data_list[0])
+            column_values = get_product_column_values(price_import_data_list)
+            bulk_insert_dynamic(table_name, column_names, column_values, insert=True)
     return 
 
 
