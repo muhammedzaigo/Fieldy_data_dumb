@@ -322,7 +322,7 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
 def retrive_products_by_tenant(tenant):
     product_names = []
     try:
-        qry = '''SELECT `name` FROM `items` WHERE `id_tenant` = %s'''
+        qry = '''SELECT `name` FROM `items` WHERE `id_tenant` = %s AND `name` IS NOT NULL'''
         existing_products = select_filter(qry, (tenant))
         product_names = []
         for name in existing_products:
