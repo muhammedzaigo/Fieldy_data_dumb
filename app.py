@@ -133,7 +133,6 @@ def product_bulk_upload():
                 "updated_products_count": len(product_already_exists_list),
                 "skipped_count": len(skipped_rows_list),
                 "imported_count": len(product_import_data_list),
-                "existing_products": existing_products
             }
             response = make_response(jsonify(response), 200)
             response.headers["Content-Type"] = "application/json"

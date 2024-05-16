@@ -322,8 +322,8 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
 def retrive_products_by_tenant(tenant):
     product_names = {}
     try:
-        qry = '''SELECT `id_item`,`name`,`current_stock` FROM `items` WHERE `id_tenant` = %s AND `status` = %s AND `name` IS NOT NULL'''
-        existing_products = select_filter(qry, (tenant,'active'))
+        qry = '''SELECT `id_item`,`name`,`current_stock` FROM `items` WHERE `id_tenant` = %s AND `deleted_at` IS NULL AND `name` IS NOT NULL'''
+        existing_products = select_filter(qry, (tenant))
         for data in existing_products:
             try:
                 name = str(data[1]).lower().strip()
