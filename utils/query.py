@@ -349,7 +349,7 @@ def retrive_products_use_bulk_insert_id(bulk_insert_id):
 
 def update_items_current_stock(new_update_list):
     try:
-        qry = '''UPDATE `items` SET `current_stock` = %s WHERE `id_item` = %s '''
+        qry = '''UPDATE `items` SET `current_stock` = %s, `updated_at` = %s WHERE `id_item` = %s '''
         products = insert_update_delete_many(qry, new_update_list)
     except Exception as e:
         print(f"items table : {str(e)}")

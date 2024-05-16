@@ -61,10 +61,12 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
         add_new_column_and_values_in_product('items', 'is_product', 1, product_import_data)
         add_new_column_and_values_in_product('items', 'bulk_insert_id', context.get('bulk_insert_id'), product_import_data)
         add_new_column_and_values_in_product('items', 'bulk_insert_row_number', line_index, product_import_data)
+        add_new_column_and_values_in_product('items', 'created_at', datetime.datetime.now(), product_import_data)
         
         add_new_column_and_values_in_product('item_prices', 'bulk_insert_row_number', line_index, price_import_data)
         add_new_column_and_values_in_product('item_prices', 'bulk_insert_id', context.get('bulk_insert_id'), price_import_data)
         add_new_column_and_values_in_product('item_prices', 'item_id', 0 , price_import_data)
+        add_new_column_and_values_in_product('item_prices', 'created_at', datetime.datetime.now(), price_import_data)
     
 
     context_data = {
@@ -167,21 +169,22 @@ def priceitems_add_product_id_by_using_row_number(price_import_data_list, key_va
 
 
 def update_current_stock_on_items(existing_products, update_products ):
-    new_update_list = []
-    for item in update_products:
-        name = item['name']
-        name = str(name).lower().strip()
-        new_current_stock = item['current_stock']
-        new_current_stock = Decimal(new_current_stock or '0')
-        if name in existing_products:
-            product = existing_products.get(name)
-            if product:
-                item_id = product['id_item']
-                existing_current_stock = product['current_stock']
-                existing_current_stock = Decimal(existing_current_stock or '0')
-                current_stock = existing_current_stock + new_current_stock
-                new_update_list.append((current_stock, item_id))
-    update_items_current_stock(tuple(new_update_list))
+    if len(update_products) > 0:
+        new_update_list = []
+        for item in update_products:
+            name = item['name']
+            name = str(name).lower().strip()
+            new_current_stock = item['current_stock']
+            new_current_stock = Decimal(new_current_stock or '0')
+            if name in existing_products:
+                product = existing_products.get(name)
+                if product:
+                    item_id = product['id_item']
+                    existing_current_stock = product['current_stock']
+                    existing_current_stock = Decimal(existing_current_stock or '0')
+                    current_stock = existing_current_stock + new_current_stock
+                    new_update_list.append((current_stock,datetime.datetime.now(),item_id))
+        update_items_current_stock(tuple(new_update_list))
     return "Successfully updated"
     
 
