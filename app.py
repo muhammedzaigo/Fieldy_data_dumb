@@ -28,7 +28,7 @@ app = Flask(__name__, instance_relative_config=True)
 #     "database": "fieldy_dev",
 # }
 
-CORS(app)
+CORS(app, origins="*")
 load_dotenv()
 app.secret_key = str(os.getenv('SECRET_KEY'))
 # app.config['MAIL_SERVER'] = 'smtp.gmail.com'
