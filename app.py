@@ -90,19 +90,28 @@ def product_bulk_upload():
             price_import_data_list = []
             for line_index, single_row in enumerate(import_sheet_convert,1):
                 validate_context = read_single_product(line_index, single_row, json_format, existing_products, context)
+
                 if validate_context["product_already_exists"]:
                     single_row["message"] = "Product already exists"
                     product_already_exists_list.append(single_row)
+                    continue
+
                 if validate_context["product_name_is_empty"]:
                     single_row["row_index"] = line_index
                     single_row["message"] = "Product is Required"
                     skipped_rows_list.append(single_row)
+                    continue
+
                 if len(validate_context["skipped_data"]) != 0:
                     skipped_rows_list.append(validate_context["skipped_data"])
+                    continue
+
                 if len(validate_context["product_import_data"]) != 0:
                     product_import_data_list.append(validate_context["product_import_data"])
+                    
                 if len(validate_context["price_import_data"]) != 0:
                     price_import_data_list.append(validate_context["price_import_data"])
+
             thread = threading.Thread(target=product_bulk_import_function, args=(product_import_data_list, price_import_data_list, context))
             thread.start()
             if len(product_already_exists_list) > 0:

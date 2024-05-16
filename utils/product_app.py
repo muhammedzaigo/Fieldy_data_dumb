@@ -43,14 +43,16 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
         else:
             product_import_data.append(dumbed_data_dict)
     
-    add_new_column_and_values_in_product('items', 'id_tenant', context.get('TENANT_ID'), product_import_data)
-    add_new_column_and_values_in_product('items', 'is_product', 1, product_import_data)
-    add_new_column_and_values_in_product('items', 'bulk_insert_id', context.get('bulk_insert_id'), product_import_data)
-    add_new_column_and_values_in_product('items', 'bulk_insert_row_number', line_index, product_import_data)
-    
-    add_new_column_and_values_in_product('item_prices', 'bulk_insert_row_number', line_index, price_import_data)
-    add_new_column_and_values_in_product('item_prices', 'bulk_insert_id', context.get('bulk_insert_id'), price_import_data)
-    add_new_column_and_values_in_product('item_prices', 'item_id', 0 , price_import_data)
+    if not product_already_exists and not product_name_is_empty:
+        
+        add_new_column_and_values_in_product('items', 'id_tenant', context.get('TENANT_ID'), product_import_data)
+        add_new_column_and_values_in_product('items', 'is_product', 1, product_import_data)
+        add_new_column_and_values_in_product('items', 'bulk_insert_id', context.get('bulk_insert_id'), product_import_data)
+        add_new_column_and_values_in_product('items', 'bulk_insert_row_number', line_index, product_import_data)
+        
+        add_new_column_and_values_in_product('item_prices', 'bulk_insert_row_number', line_index, price_import_data)
+        add_new_column_and_values_in_product('item_prices', 'bulk_insert_id', context.get('bulk_insert_id'), price_import_data)
+        add_new_column_and_values_in_product('item_prices', 'item_id', 0 , price_import_data)
     
     context_data = {
         "product_already_exists":product_already_exists, 
