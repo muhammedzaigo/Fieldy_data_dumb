@@ -320,20 +320,19 @@ def get_bulk_retrive_using_tenant_id(context, json_format):
 ## product query
 
 def retrive_products_by_tenant(tenant):
-    product_names = []
+    product_names = {}
     try:
-        qry = '''SELECT `name` FROM `items` WHERE `id_tenant` = %s AND `name` IS NOT NULL'''
-        existing_products = select_filter(qry, (tenant))
-        product_names = []
-        for name in existing_products:
+        qry = '''SELECT `id_item`,`name`,`current_stock` FROM `items` WHERE `id_tenant` = %s AND `status` = %s AND `name` IS NOT NULL'''
+        existing_products = select_filter(qry, (tenant,'active'))
+        for data in existing_products:
             try:
-                name = str(name[0]).lower().strip()
-                product_names.append(name)
+                name = str(data[1]).lower().strip()
+                if name not in product_names:
+                    product_names[name] = {"id_item": data[0],"current_stock": data[2]}
             except:
                 pass
-        product_names = list(set(product_names))
     except Exception as e:
-        print(f"product : {str(e)}")
+        print(f"items : {str(e)}")
     return product_names
 
 
@@ -343,6 +342,15 @@ def retrive_products_use_bulk_insert_id(bulk_insert_id):
         qry = ''' SELECT `id_item`, `bulk_insert_row_number`  FROM `items` WHERE `bulk_insert_id` = %s'''
         val = (bulk_insert_id)
         products = select_filter(qry, val)
+    except Exception as e:
+        print(f"items table : {str(e)}")
+    return products
+
+
+def update_items_current_stock(new_update_list):
+    try:
+        qry = '''UPDATE `items` SET `current_stock` = %s WHERE `id_item` = %s '''
+        products = insert_update_delete_many(qry, new_update_list)
     except Exception as e:
         print(f"items table : {str(e)}")
     return products

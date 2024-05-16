@@ -88,12 +88,15 @@ def product_bulk_upload():
             skipped_rows_list = []
             product_import_data_list = []
             price_import_data_list = []
+            update_products = []
+
             for line_index, single_row in enumerate(import_sheet_convert,1):
                 validate_context = read_single_product(line_index, single_row, json_format, existing_products, context)
 
                 if validate_context["product_already_exists"]:
                     single_row["message"] = "Product already exists"
                     product_already_exists_list.append(single_row)
+                    update_products.append(validate_context["product_already_exists_dict"])
                     continue
 
                 if validate_context["product_name_is_empty"]:
@@ -112,12 +115,12 @@ def product_bulk_upload():
                 if len(validate_context["price_import_data"]) != 0:
                     price_import_data_list.append(validate_context["price_import_data"])
 
-            thread = threading.Thread(target=product_bulk_import_function, args=(product_import_data_list, price_import_data_list, context))
+            thread = threading.Thread(target=product_bulk_import_function, args=(product_import_data_list, price_import_data_list, context, existing_products, update_products,))
             thread.start()
-            if len(product_already_exists_list) > 0:
-                product_already_exists_field_name = get_product_field_names(product_already_exists_list[0])
-                thread1 = threading.Thread(target=send_product_skipped_data, args=(product_already_exists_field_name, product_already_exists_list, target_email, len(product_already_exists_list),'existing_product',"existing_product"))
-                thread1.start()
+            # if len(product_already_exists_list) > 0:
+            #     product_already_exists_field_name = get_product_field_names(product_already_exists_list[0])
+            #     thread1 = threading.Thread(target=send_product_skipped_data, args=(product_already_exists_field_name, product_already_exists_list, target_email, len(product_already_exists_list),'existing_product',"existing_product"))
+            #     thread1.start()
             if len(skipped_rows_list) > 0:
                 skipped_rows_list_field_name = get_product_field_names(skipped_rows_list[0])
                 thread2 = threading.Thread(target=send_product_skipped_data, args=(skipped_rows_list_field_name, skipped_rows_list, target_email, len(skipped_rows_list),'skipped_product',"skipped_product"))
@@ -126,7 +129,7 @@ def product_bulk_upload():
                 'message': 'Product imported successfully',
                 "tenant_id":tenent_id,
                 "bulk_insert_id":bulk_insert_id,
-                "existing_product_count": len(product_already_exists_list),
+                "updated_products_count": len(product_already_exists_list),
                 "skipped_count": len(skipped_rows_list),
                 "imported_count": len(product_import_data_list)
             }
