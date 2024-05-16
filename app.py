@@ -67,8 +67,8 @@ def product_bulk_upload():
             json_format = request.form.get('json_format', None)
             target_email = request.form.get('target_email', None)
             created_by = request.form.get('created_by', None)
-            if tenent_id == None or json_format == None or created_by == None:
-                return make_response(jsonify({'message': 'tenant_id, json_format, created_by is required fields'}), 400)
+            if tenent_id == None or json_format == None:
+                return make_response(jsonify({'message': 'tenant_id, json_format, is required fields'}), 400)
             import_sheet_convert, df = import_sheet_convert_to_csv(file)
             if df.empty:
                 return make_response(jsonify({"message": f"The '{file.filename}' file is empty or contains only empty rows and columns."},400))
