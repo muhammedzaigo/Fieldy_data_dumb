@@ -52,28 +52,26 @@ def password_hash(password):
     return hashed_password
 
 
-
-
 def currect_json_map_and_which_user_type(json_format):
     organization = False
     which_types_imported = CONTACT
-    which_types = []
     json_format = currect_address_map(json_format)
 
     for key, value in json_format.items():
         if value["table_slug"] == "zipcode":
             value["table_slug"] = "zip_code"
 
-        if value["parent"] == "addresses": # contact and organization address change to branch_address
+        # contact and organization address change to branch_address
+        if value["parent"] == "addresses":
             if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name", "first_name", "last_name",]:
                 value["parent"] = "branch_addresses"
 
         if value["parent"] == "":
-            if value["table_slug"] in ["name", "website", "email", "first_name", "last_name", "job_title", "lead_source"]:
+            if value["table_slug"] in ["name", "website", "email", "first_name", "last_name", "lead_source"]:
                 value["parent"] = "customer_group"
-             
-            if value["table_slug"] ==  "job_title":
-                value["parent"] = "users"   
+
+            if value["table_slug"] == "job_title":
+                value["parent"] = "users"
 
             if value["table_slug"] in ["line_1", "line_2", "city", "state", "zip_code", "branch_name"]:
                 value["parent"] = "addresses"
@@ -81,27 +79,11 @@ def currect_json_map_and_which_user_type(json_format):
         if value["parent"] == "contacts":
             value["parent"] = "users"
 
-        if value["entity"] == "organization" and value["table_slug"] == "name":
+        if value["entity"] == "organization":
             organization = True
-
-        which_types.append(value['entity'])
-
         json_format = add_validation_fields(value, key, json_format)
-
     if organization:
-        json_format = if_name_in_organization_all_entity_convert_organization(
-            json_format)
         which_types_imported = ORGAZANAIZATION
-
-    which_types = list(set(which_types))
-
-    if not organization:
-        if "contact" not in which_types and len(which_types) != 0:
-            which_types_imported = ORGAZANAIZATION
-
-        if "contact" in which_types and "organization" in which_types and organization:
-            which_types_imported = ORGAZANAIZATION
-
     return {"json_format": json_format, "user_type": which_types_imported}
 
 
@@ -134,86 +116,74 @@ def currect_address_map(json_format):
 def add_validation_fields(values, key, json_format):
     if values["table_slug"] == "line_1":
         json_format[key].update({"validation": validation(
-            max="255"), "field_type": "all_characters"})
+            max=256), "field_type": "all_characters"})
 
     if values["table_slug"] == "line_2":
         json_format[key].update({"validation": validation(
-            max="150"), "field_type": "all_characters"})
+            max=256), "field_type": "all_characters"})
 
     if values["table_slug"] == "state":
         json_format[key].update({"validation": validation(
-            max="255"), "field_type": "all_characters"})
+            max=45), "field_type": "all_characters"})
 
     if values["table_slug"] == "city":
         json_format[key].update({"validation": validation(
-            max="255"), "field_type": "all_characters"})
+            max=256), "field_type": "all_characters"})
 
     if values["table_slug"] == "zip_code":
         json_format[key].update({"validation": validation(
-            max="18"), "field_type": "all_characters"})
+            max=18), "field_type": "all_characters"})
 
     if values["table_slug"] == "email":
         json_format[key].update({"validation": validation(
-            min="64", max="255"), "field_type": "email"})
+            min=64, max=256), "field_type": "email"})
 
     if values["table_slug"] == "number":
         json_format[key].update({"validation": validation(
-            min="6", max="15"), "field_type": "number"})
+            min=6, max=20), "field_type": "number"})
 
     if values["table_slug"] == "phone":
         json_format[key].update({"validation": validation(
-            min="6", max="15"), "field_type": "number"})
+            min=6, max=20), "field_type": "number"})
 
     if values["table_slug"] == "lead_source":
         json_format[key].update({"validation": validation(
-            max="256"), "field_type": "alpha_numeric"})
+            max=256), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "branch_name":
         json_format[key].update({"validation": validation(
-            max="256"), "field_type": "all_characters"})
+            max=256), "field_type": "all_characters"})
 
     if values["table_slug"] == "first_name":
         json_format[key].update({"validation": validation(
-            max="256"), "field_type": "alpha_numeric"})
+            max=256), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "last_name":
         json_format[key].update({"validation": validation(
-            max="256",), "field_type": "alpha_numeric"})
+            max=256), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "job_title":
-        json_format[key].update(
-            {"validation": validation(max="256"), "field_type": "alpha_numeric"})
+        json_format[key].update({"validation": validation(
+            max=256), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "name":
         json_format[key].update({"validation": validation(
-            max="256"), "field_type": "alpha_numeric"})
+            max=256), "field_type": "alpha_numeric"})
 
     if values["table_slug"] == "website":
-        json_format[key].update(
-            {"validation": validation(max="512"), "field_type": "website"})
-
-    if values["table_slug"] == "id_country":
         json_format[key].update({"validation": validation(
-            max="90"), "field_type": "all_characters"})
-
+            max=512), "field_type": "website"})
     return json_format
 
 
-def if_name_in_organization_all_entity_convert_organization(json_format):
-    for key, value in json_format.items():
-        if value["entity"] != "organization":
-            value["entity"] = "organization"
-    return json_format
-
-
-def validation(min: str = "", max: str = ""):
+def validation(min=0, max=256):
     validation = {"min": min, "max": max}
     return validation
 
 
 def is_valid_email(email, min, max):
     response = {}
-    pattern = r"^[a-zA-Z0-9._%+\-]{1,64}@[a-zA-Z0-9.\-]{1,255}\.[a-zA-Z]{2,}$"
+    pattern = r"^[a-zA-Z0-9._%+\-]{1,64}@[a-zA-Z0-9.\-]{1,256}\.[a-zA-Z]{2,}$"
     if re.match(pattern, email):
         response.update({"valid": True})
     else:
@@ -236,12 +206,17 @@ def is_valid_phone_number(number, min=6, max=15):
     converted_number = re.sub(r'[^0-9]', '', str(number))
     pattern = r"^\+?[1-9]\d{%d,%d}$" % (min-1, max-1)
     response = {}
-    if re.match(pattern, converted_number):
-        if len(converted_number) >= min and len(converted_number) <= max:
-            response.update({"valid": True})
-    else:
+    serch_pattern = r"[\.e]" 
+    if re.search(serch_pattern, str(number)):
         response.update(
-            {"valid": False, "message": f"Invalid phone number or phone number must be minimum {min} and maximam {max} characters"})
+            {"valid": False, "message": f"Invalid phone number"})
+    else:
+        if re.match(pattern, converted_number):
+            if len(converted_number) >= min and len(converted_number) <= max:
+                response.update({"valid": True})
+        else:
+            response.update(
+                {"valid": False, "message": f"Invalid phone number or phone number must be minimum {min} and maximam {max} characters"})
     return response
 
 
@@ -258,11 +233,11 @@ def is_valid_alphanumeric(text, min=1, max=256):
 
 def is_all_characters(text, min=1, max=256):
     response = {}
-    if len(str(text)) <= max:
-        response.update({"valid": True})
-    else:
+    if len(str(text)) > max:
         response.update(
             {"valid": False, "message": f"Invalid format or your provide greater than {max} characters"})
+    else:
+        response.update({"valid": True})
     return response
 
 
@@ -321,33 +296,13 @@ def add_column_values(val, table_name, TENANT_ID, bulk_insert_id, created_by):
     return val
 
 
-def remove_duplicates_in_sheet(sheet, which_user):
+def remove_duplicates_in_sheet(sheet, which_user, json_format):
     if which_user == ORGAZANAIZATION:
-        context = organization_remove_duplicates_in_sheet(sheet)
+        context = organization_remove_duplicates_in_sheet(sheet, json_format)
     else:
         context = contact_remove_duplicates_in_sheet(sheet)
     return context
 
-
-# def contact_remove_duplicates_in_sheet(read_sheet):
-#     df = pd.read_csv(io.StringIO(read_sheet))
-#     df.columns = map(str.lower, df.columns)
-#     if 'email' in df.columns and not df['email'].isnull().all():
-#         cleaned_data = df.drop_duplicates(
-#             subset=df.columns.difference(['email']), keep='first')
-#         cleaned_data.drop_duplicates(
-#             subset=['email'], keep='first', inplace=True)
-#     else:
-#         cleaned_data = df.drop_duplicates(keep='first')
-
-#     removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
-#     removed_data = removed_data.dropna(how='all')
-#     cleaned_data_dict = cleaned_data.to_dict(orient='records')
-#     fieldnames = list(cleaned_data_dict[0].keys())
-#     removed_data_dict = removed_data.to_dict(orient='index')
-#     context = {"cleaned_data": cleaned_data_dict,
-#                "fieldnames": fieldnames, "removed_rows": removed_data_dict}
-#     return context
 
 def contact_remove_duplicates_in_sheet(read_sheet):
     df = pd.read_csv(io.StringIO(read_sheet))
@@ -373,8 +328,16 @@ def contact_remove_duplicates_in_sheet(read_sheet):
     return context
 
 
-def organization_remove_duplicates_in_sheet(read_sheet):
+def organization_remove_duplicates_in_sheet(read_sheet, json_format):
+    uniqe_fieldname = "organization_name"
+    for key, value in json_format.items():
+        if value["table_slug"] == "name":
+            uniqe_fieldname = value["sheet_header_name"]
+            uniqe_fieldname = uniqe_fieldname.lower()
+            break
+
     df = pd.read_csv(io.StringIO(read_sheet))
+
     df.columns = map(str.lower, df.columns)
     df = df.fillna('')
     if 'email' in df.columns and not df['email'].isnull().all():
@@ -388,12 +351,8 @@ def organization_remove_duplicates_in_sheet(read_sheet):
         removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
         removed_data = removed_data.dropna(how='all')
 
-        cleaned_data_dict_for_get_fieldname = cleaned_data.to_dict(
-            orient='records')
-        fieldnames = list(cleaned_data_dict_for_get_fieldname[0].keys())
-
         dupicate_name = organization_dupicate_name(
-            df, cleaned_data, fieldnames)
+            df, cleaned_data, uniqe_fieldname)
         cleaned_data = dupicate_name["cleaned_data"]
         remove_dupicate_name = dupicate_name["name_removed_data"]
     else:
@@ -401,12 +360,8 @@ def organization_remove_duplicates_in_sheet(read_sheet):
         removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
         removed_data = removed_data.dropna(how='all')
 
-        cleaned_data_dict_for_get_fieldname = cleaned_data.to_dict(
-            orient='records')
-        fieldnames = list(cleaned_data_dict_for_get_fieldname[0].keys())
-
         dupicate_name = organization_dupicate_name(
-            df, cleaned_data, fieldnames)
+            df, cleaned_data, uniqe_fieldname)
         cleaned_data = dupicate_name["cleaned_data"]
         remove_dupicate_name = dupicate_name["name_removed_data"]
 
@@ -419,9 +374,9 @@ def organization_remove_duplicates_in_sheet(read_sheet):
     return context
 
 
-def organization_dupicate_name(df, cleaned_data, fieldnames):
+def organization_dupicate_name(df, cleaned_data, uniqe_fieldname):
     cleaned_data = df.drop_duplicates(
-        subset=[fieldnames[0]], keep='first')
+        subset=[uniqe_fieldname], keep='first')
     name_removed_data = df[~df.isin(cleaned_data)].dropna(how='all')
     return {"cleaned_data": cleaned_data, "name_removed_data": name_removed_data}
 
@@ -434,18 +389,19 @@ def import_sheets(file):
         csv_filename = ""
         XLSX = False
     except:
-        df = pd.read_excel(file, sheet_name=None)
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        for sheet_name, sheet_data in df.items():
-            if not os.path.exists("sheets"):
-                os.mkdir("sheets")
-            csv_filename = f"sheets/{sheet_name}_{timestamp}.csv"
-            sheet_data.to_csv(csv_filename, index=False)
-            with open(csv_filename, 'rb') as csv_file:
-                encoding_type = chardet.detect(csv_file.read())
-            with open(csv_filename, 'r', encoding=encoding_type['encoding']) as csv_file:
-                import_sheet = csv_file.read()
-            XLSX = True
+        workbook = pd.ExcelFile(file)
+        sheet_name = workbook.sheet_names[0]
+        sheet_data = workbook.parse(sheet_name)
+        if not os.path.exists("sheets"):
+            os.mkdir("sheets")
+        csv_filename = f"sheets/{sheet_name}_{timestamp}.csv"
+        sheet_data.to_csv(csv_filename, index=False)
+        with open(csv_filename, 'rb') as csv_file:
+            encoding_type = chardet.detect(csv_file.read())
+        with open(csv_filename, 'r', encoding=encoding_type['encoding']) as csv_file:
+            import_sheet = csv_file.read()
+        XLSX = True
 
     return {
         "csv_filename": csv_filename,
@@ -460,3 +416,37 @@ def delete_csv_file(import_sheet):
         if os.path.exists(csv_filename):
             os.remove(csv_filename)
         return "Successfully deleted"
+
+
+
+def import_sheet_convert_to_csv(sheet, orient="records", unique_values=[]):
+    try:
+        import_sheet = sheet.read()
+        file_encoding = chardet.detect(import_sheet)['encoding']
+        import_sheet = import_sheet.decode(file_encoding)
+        df = pd.read_csv(io.StringIO(import_sheet))
+        df.columns = df.columns.str.replace('\n', '')
+        df.columns = map(str.lower, df.columns)
+        df.columns = map(str.strip, df.columns)
+        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        df = df.fillna('')
+        cleaned_data = df.drop_duplicates(keep='first')
+        if len(unique_values) > 0:
+            for unique in unique_values:
+                if unique in df.columns:
+                    cleaned_data = cleaned_data.drop_duplicates(subset=[unique], keep="first")
+        cleaned_data_dict = cleaned_data.to_dict(orient=orient)
+    except:
+        df = pd.read_excel(sheet)
+        df.columns = df.columns.str.replace('\n', '')
+        df.columns = map(str.lower, df.columns)
+        df.columns = map(str.strip, df.columns)
+        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        df = df.fillna('')
+        cleaned_data = df.drop_duplicates(keep='first')
+        if len(unique_values) > 0:
+            for unique in unique_values:
+                if unique in df.columns:
+                    cleaned_data = cleaned_data.duplicated(subset=[unique], keep="first")
+        cleaned_data_dict = cleaned_data.to_dict(orient=orient)
+    return cleaned_data_dict, df

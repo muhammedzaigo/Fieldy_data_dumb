@@ -1,5 +1,5 @@
 
-def email_template(count=10, file_url="", logo_url=""):
+def email_template(count=10, file_url="", logo_url="",massege_type=""):
     email_send = '''
         <!doctype html>
         <html>
@@ -12,7 +12,7 @@ def email_template(count=10, file_url="", logo_url=""):
                 Fieldy Bulk Import
               </h1>
               <p>Dear Admin,</p>
-                <p>Total number of {count} Skiped data. Please
+                <p>Total number of {count} {massege_type} data. Please
                  find the report <a href="{file_url}" target="_blank">here</a></p>
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                        <tr>
@@ -28,7 +28,7 @@ def email_template(count=10, file_url="", logo_url=""):
             <!-- Example of invalid for email html/css, will be detected by Mailtrap: -->
           </body>
         </html>
-            '''.format(count=count,file_url= file_url , logo_url= logo_url)
+            '''.format(count=count,file_url= file_url , logo_url= logo_url, massege_type=massege_type)
     return email_send
 
 
