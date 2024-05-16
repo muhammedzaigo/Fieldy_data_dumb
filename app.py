@@ -12,7 +12,7 @@ import requests
 from flask_mail import Mail, Message
 from template.email import email_template, error_template
 import traceback
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from database_connection import *
 # from api.bulk_insert import product_bulk_upload
 
@@ -57,6 +57,7 @@ mail = Mail(app)
 
 
 @app.route("/api/product_bulk_upload/", methods=['POST'])
+@cross_origin(origin='*')
 def product_bulk_upload():
     if request.method == 'POST':  
         try:
