@@ -1260,8 +1260,9 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                     users_job_title = value["value"]
 
             if customer_name is None and len(customer_first_name) != 0:
-                customer_name = customer_first_name+" "+customer_last_name
-                customer_name = customer_name.strip()
+                customer_name = customer_first_name
+                if customer_last_name:
+                    customer_name = customer_name + ' ' + customer_last_name
 
             customer_group_pk_and_address_pk = []
             customer_group_pk_and_address_pk_branch_address = []
