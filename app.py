@@ -12,7 +12,7 @@ import requests
 from flask_mail import Mail, Message
 from template.email import email_template, error_template
 import traceback
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from database_connection import *
 # from api.bulk_insert import product_bulk_upload
 
@@ -28,7 +28,7 @@ app = Flask(__name__, instance_relative_config=True)
 #     "database": "fieldy_dev",
 # }
 
-CORS(app)
+CORS(app, origins="*")
 load_dotenv()
 app.secret_key = str(os.getenv('SECRET_KEY'))
 # app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -57,6 +57,7 @@ mail = Mail(app)
 
 
 @app.route("/api/product_bulk_upload/", methods=['POST'])
+@cross_origin(origin='*')
 def product_bulk_upload():
     if request.method == 'POST':  
         try:
@@ -67,8 +68,8 @@ def product_bulk_upload():
             json_format = request.form.get('json_format', None)
             target_email = request.form.get('target_email', None)
             created_by = request.form.get('created_by', None)
-            if tenent_id == None or json_format == None or created_by == None:
-                return make_response(jsonify({'message': 'tenant_id, json_format, created_by is required fields'}), 400)
+            if tenent_id == None or json_format == None:
+                return make_response(jsonify({'message': 'tenant_id, json_format, is required fields'}), 400)
             import_sheet_convert, df = import_sheet_convert_to_csv(file)
             if df.empty:
                 return make_response(jsonify({"message": f"The '{file.filename}' file is empty or contains only empty rows and columns."},400))
@@ -88,12 +89,15 @@ def product_bulk_upload():
             skipped_rows_list = []
             product_import_data_list = []
             price_import_data_list = []
+            update_products = []
+
             for line_index, single_row in enumerate(import_sheet_convert,1):
                 validate_context = read_single_product(line_index, single_row, json_format, existing_products, context)
 
                 if validate_context["product_already_exists"]:
                     single_row["message"] = "Product already exists"
                     product_already_exists_list.append(single_row)
+                    update_products.append(validate_context["product_already_exists_dict"])
                     continue
 
                 if validate_context["product_name_is_empty"]:
@@ -112,12 +116,12 @@ def product_bulk_upload():
                 if len(validate_context["price_import_data"]) != 0:
                     price_import_data_list.append(validate_context["price_import_data"])
 
-            thread = threading.Thread(target=product_bulk_import_function, args=(product_import_data_list, price_import_data_list, context))
+            thread = threading.Thread(target=product_bulk_import_function, args=(product_import_data_list, price_import_data_list, context, existing_products, update_products,))
             thread.start()
-            if len(product_already_exists_list) > 0:
-                product_already_exists_field_name = get_product_field_names(product_already_exists_list[0])
-                thread1 = threading.Thread(target=send_product_skipped_data, args=(product_already_exists_field_name, product_already_exists_list, target_email, len(product_already_exists_list),'existing_product',"existing_product"))
-                thread1.start()
+            # if len(product_already_exists_list) > 0:
+            #     product_already_exists_field_name = get_product_field_names(product_already_exists_list[0])
+            #     thread1 = threading.Thread(target=send_product_skipped_data, args=(product_already_exists_field_name, product_already_exists_list, target_email, len(product_already_exists_list),'existing_product',"existing_product"))
+            #     thread1.start()
             if len(skipped_rows_list) > 0:
                 skipped_rows_list_field_name = get_product_field_names(skipped_rows_list[0])
                 thread2 = threading.Thread(target=send_product_skipped_data, args=(skipped_rows_list_field_name, skipped_rows_list, target_email, len(skipped_rows_list),'skipped_product',"skipped_product"))
@@ -126,9 +130,9 @@ def product_bulk_upload():
                 'message': 'Product imported successfully',
                 "tenant_id":tenent_id,
                 "bulk_insert_id":bulk_insert_id,
-                "existing_product_count": len(product_already_exists_list),
+                "updated_products_count": len(product_already_exists_list),
                 "skipped_count": len(skipped_rows_list),
-                "imported_count": len(product_import_data_list)
+                "imported_count": len(product_import_data_list),
             }
             response = make_response(jsonify(response), 200)
             response.headers["Content-Type"] = "application/json"
@@ -1300,8 +1304,9 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                     users_job_title = value["value"]
 
             if customer_name is None and len(customer_first_name) != 0:
-                customer_name = customer_first_name+" "+customer_last_name
-                customer_name = customer_name.strip()
+                customer_name = customer_first_name
+                if customer_last_name:
+                    customer_name = customer_name + ' ' + customer_last_name
 
             customer_group_pk_and_address_pk = []
             customer_group_pk_and_address_pk_branch_address = []
