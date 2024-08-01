@@ -45,13 +45,14 @@ def valid_value(value):
 
 def validate_field_type_value(value, validation):
     valid, msg = False, "No Value"
-    field_type = validation['field_type']
-    if field_type == "all_characters" :
-        valid, msg = all_characters_validation(validation, value)
-    if field_type == "special_characters" :
-        valid, msg = special_characters_validation(validation, value)
-    if field_type == "price_and_stock_characters" :
-        valid, msg = price_and_stock_characters_validation(validation, value)
+    if len(value) != 0:
+        field_type = validation['field_type']
+        if field_type == "all_characters" :
+            valid, msg = all_characters_validation(validation, value)
+        if field_type == "special_characters" :
+            valid, msg = special_characters_validation(validation, value)
+        if field_type == "price_and_stock_characters" :
+            valid, msg = price_and_stock_characters_validation(validation, value)
     return valid, msg
 
 

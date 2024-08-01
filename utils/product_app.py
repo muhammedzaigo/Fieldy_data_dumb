@@ -7,12 +7,13 @@ from utils.query import bulk_insert_dynamic, retrive_products_use_bulk_insert_id
 
 def read_single_product(line_index, single_row, json_format, existing_products, context):
 
-    skipped_data = []
     product_import_data = []
     price_import_data = []
     product_already_exists = False
     product_name_is_empty = False
+    is_skipped = False
     product_already_exists_dict = {}
+    single_row_msg = ""
 
     for sheet_column_name in json_format.keys():
         column_deatails = json_format[sheet_column_name]
@@ -31,22 +32,15 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
         
         if not product_already_exists:
             skip, msg = validate_field_type_value(value, validation)
-            if skip:
-                skipped_data.append(
-                    {
-                        "column_name": sheet_column_name,
-                        "value" : value,
-                        "row_index": line_index,
-                        "column_index": column_index,
-                        "message" : msg
-                    }
-                )
-                value = ""
-            dumbed_data_dict = for_dumbed_data_fun(value, table_column_slug)
-            if table_column_slug == "price":
-                price_import_data.append(dumbed_data_dict)
-            else:
-                product_import_data.append(dumbed_data_dict)
+            if not is_skipped:
+                if skip:
+                    single_row_msg = msg
+                    is_skipped = True
+                dumbed_data_dict = for_dumbed_data_fun(value, table_column_slug)
+                if table_column_slug == "price":
+                    price_import_data.append(dumbed_data_dict)
+                else:
+                    product_import_data.append(dumbed_data_dict)
         else:
             if table_column_slug  not in ["name","current_stock"]:
                 continue
@@ -55,7 +49,7 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
             if table_column_slug == 'current_stock':
                 product_already_exists_dict["current_stock"] = value
     
-    if not product_already_exists and not product_name_is_empty:
+    if not product_already_exists and not product_name_is_empty and not is_skipped:
         
         add_new_column_and_values_in_product('items', 'id_tenant', context.get('TENANT_ID'), product_import_data)
         add_new_column_and_values_in_product('items', 'is_product', 1, product_import_data)
@@ -72,10 +66,11 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
     context_data = {
         "product_already_exists":product_already_exists, 
         "product_name_is_empty":product_name_is_empty,
-        "skipped_data": skipped_data,
+        "skipped_data": is_skipped,
         "product_import_data":product_import_data,
         "price_import_data":price_import_data,
-        "product_already_exists_dict" : product_already_exists_dict
+        "product_already_exists_dict" : product_already_exists_dict,
+        "single_row_msg" : single_row_msg
     }
     return context_data
 

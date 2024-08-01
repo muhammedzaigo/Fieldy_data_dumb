@@ -106,8 +106,10 @@ def product_bulk_upload():
                     skipped_rows_list.append(single_row)
                     continue
 
-                if len(validate_context["skipped_data"]) != 0:
-                    skipped_rows_list.append(validate_context["skipped_data"])
+                if validate_context["skipped_data"]:
+                    single_row["message"] = validate_context["single_row_msg"]
+                    single_row["row_index"] = line_index
+                    skipped_rows_list.append(single_row)
                     continue
 
                 if len(validate_context["product_import_data"]) != 0:
@@ -118,10 +120,10 @@ def product_bulk_upload():
 
             thread = threading.Thread(target=product_bulk_import_function, args=(product_import_data_list, price_import_data_list, context, existing_products, update_products,))
             thread.start()
-            # if len(product_already_exists_list) > 0:
-            #     product_already_exists_field_name = get_product_field_names(product_already_exists_list[0])
-            #     thread1 = threading.Thread(target=send_product_skipped_data, args=(product_already_exists_field_name, product_already_exists_list, target_email, len(product_already_exists_list),'existing_product',"existing_product"))
-            #     thread1.start()
+            if len(product_already_exists_list) > 0:
+                product_already_exists_field_name = get_product_field_names(product_already_exists_list[0])
+                thread1 = threading.Thread(target=send_product_skipped_data, args=(product_already_exists_field_name, product_already_exists_list, target_email, len(product_already_exists_list),'existing_product',"existing_product"))
+                thread1.start()
             if len(skipped_rows_list) > 0:
                 skipped_rows_list_field_name = get_product_field_names(skipped_rows_list[0])
                 thread2 = threading.Thread(target=send_product_skipped_data, args=(skipped_rows_list_field_name, skipped_rows_list, target_email, len(skipped_rows_list),'skipped_product',"skipped_product"))
