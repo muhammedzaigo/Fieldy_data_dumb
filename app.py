@@ -916,6 +916,8 @@ def split_and_add_fields_customer_group_for_user(responce_dict, row_index):
 
 
 def send_mail_skip_data_and_invalid_data_convert_to_csv(field_names, skip_data, invalid_data, duplicate_data, target_email):
+    if not os.path.exists('invalid_data_sheets/'): 
+        os.mkdir('invalid_data_sheets/') 
     field_names_copy = field_names.copy()
     field_names_copy.insert(0, "line Number")
     if len(skip_data) != 0:
