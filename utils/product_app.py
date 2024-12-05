@@ -14,6 +14,7 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
     is_skipped = False
     product_already_exists_dict = {}
     single_row_msg = ""
+    is_product = True # False - is services
 
     for sheet_column_name in json_format.keys():
         column_deatails = json_format[sheet_column_name]
@@ -23,6 +24,12 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
         column_index = column_deatails['column_index']
         validation = column_deatails['validation']
         value = valid_value(value)
+        
+        if table_column_slug == "item_type":
+            if value == "Service":
+                is_product = False
+            continue
+
         if table_column_slug  == 'name':
             if len(value) == 0:
                 product_name_is_empty = True
@@ -51,8 +58,13 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
     
     if not product_already_exists and not product_name_is_empty and not is_skipped:
         
+        if is_product:
+            add_new_column_and_values_in_product('items', 'is_product', 1, product_import_data)
+        else:
+            remove_the_product_datas_if_service_product(product_import_data)
+            add_new_column_and_values_in_product('items', 'is_product', 0, product_import_data)
+
         add_new_column_and_values_in_product('items', 'id_tenant', context.get('TENANT_ID'), product_import_data)
-        add_new_column_and_values_in_product('items', 'is_product', 1, product_import_data)
         add_new_column_and_values_in_product('items', 'bulk_insert_id', context.get('bulk_insert_id'), product_import_data)
         add_new_column_and_values_in_product('items', 'bulk_insert_row_number', line_index, product_import_data)
         add_new_column_and_values_in_product('items', 'created_at', datetime.datetime.now(), product_import_data)
@@ -62,7 +74,7 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
         add_new_column_and_values_in_product('item_prices', 'item_id', 0 , price_import_data)
         add_new_column_and_values_in_product('item_prices', 'created_at', datetime.datetime.now(), price_import_data)
     
-
+        
     context_data = {
         "product_already_exists":product_already_exists, 
         "product_name_is_empty":product_name_is_empty,
@@ -74,6 +86,14 @@ def read_single_product(line_index, single_row, json_format, existing_products, 
     }
     return context_data
 
+
+def remove_the_product_datas_if_service_product(product_import_data):
+    for product in product_import_data:
+        if product['column_name'] in ['current_stock','low_stock']:
+            product['value'] = Decimal('0')
+        if product['column_name'] == 'sku':
+            product['value'] = ''
+    return product_import_data
 
 def add_new_column_and_values_in_product(table_name, column_name, value, append_list :list):
     return append_list.append(

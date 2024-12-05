@@ -3,14 +3,13 @@ from typing import Dict
 import pandas as pd
 import re
 
-
-
 def add_validations_in_product_json_format(json_format : Dict[str,Dict[str,str]]):
 	for column_name, other_informations in json_format.items(): 
 		table_column_slug = other_informations['table_column_slug']
 		validation = fields_validation(table_column_slug)
 		other_informations['validation'] = validation
 	return json_format
+
 
 def fields_validation(table_column_slug):
     product_validation = {}
@@ -28,6 +27,7 @@ def fields_validation(table_column_slug):
             max=12), "field_type": "price_and_stock_characters"}
     product_validation['low_stock'] = {"validation": length_validation(
             max=12), "field_type": "price_and_stock_characters"}
+    product_validation['item_type'] = {"validation": {}, "field_type": "item_type"}
     return product_validation[table_column_slug]
 
 
