@@ -93,7 +93,7 @@ def for_dumbed_data_fun(value : str, table_column_slug : str):
         dumbed_data_dict = {
                 "table_name": table_name,
                 "column_name": table_column_slug,
-                "value" : value,
+                "value" : Decimal(value or '0'),
         }
     else:
         dumbed_data_dict = {
@@ -113,7 +113,7 @@ def product_bulk_import_function(product_import_data_list, price_import_data_lis
         bulk_insert_id = context.get('bulk_insert_id')
         retrive_products = retrive_products_use_bulk_insert_id(bulk_insert_id)
         key_value_products_dict = retrive_products_convert_to_key_value_pair(retrive_products)
-        if len(price_import_data_list) > 0:
+        if price_import_data_list:
             price_import_data_list = priceitems_add_product_id_by_using_row_number(price_import_data_list, key_value_products_dict)
             table_name ,column_names = get_product_column_names(price_import_data_list[0])
             column_values = get_product_column_values(price_import_data_list)
@@ -138,7 +138,7 @@ def get_product_column_values(import_data_list):
     for data_list in import_data_list:
         innerlist = []
         for items in data_list:
-            innerlist.append(items['value'])
+            innerlist.append(items.get('value'))
         outerlist.append(innerlist)
     return outerlist
 

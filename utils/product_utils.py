@@ -1,10 +1,11 @@
 
+from typing import Dict
 import pandas as pd
 import re
 
 
 
-def add_validations_in_product_json_format(json_format):
+def add_validations_in_product_json_format(json_format : Dict[str,Dict[str,str]]):
 	for column_name, other_informations in json_format.items(): 
 		table_column_slug = other_informations['table_column_slug']
 		validation = fields_validation(table_column_slug)
