@@ -412,52 +412,38 @@ def read_data_row_by_rows(cleaned_data, field_names, json_format, context, retri
 def divide_to_field_type_with_json_format(row_index, line, field_names, json_format, context, retrive_customer_data):
 
     customer_list = []
-    organized_customer_list = []
     skip_data = []
     same_organization_diffrent_user = None
 
     invalid_data = []
     invalid = False
 
-    json_format_keys = json_format.keys()
-    for key in json_format_keys:
-
-        user_type = json_format[key]['entity']
-        table_name = json_format[key]['parent']
-        column_name = json_format[key]['table_slug']
-        validation = json_format[key]['validation']
-        field_type = json_format[key]['field_type']
-        column_index = json_format[key]['sheet_header_index']
+    for key, details in json_format.items():
+        user_type = details['entity']
+        table_name = details['parent']
+        column_name = details['table_slug']
+        validation = details['validation']
+        field_type = details['field_type']
+        column_index = details['sheet_header_index']
         field_name = field_names[column_index]
-        value = line[field_name]
-        
-        if user_type == "contact":
-            field_format_return_dict = finding_which_data(row_index, column_index,
-                                                          user_type, table_name, column_name, validation, field_type, value)
-            if field_format_return_dict["valid"]:
-                customer_list.append((field_format_return_dict))
-                invalid_data.append((field_format_return_dict))
-            else:
+        value : str = line[field_name]
+
+        # Split values if it's a number field containing commas
+        values = value.split(',') if field_type == 'number' and ',' in value else [value]
+
+        for value in values:
+            field_format_return_dict = finding_which_data(
+                row_index, column_index, user_type, table_name, column_name,
+                validation, field_type, value
+            )
+
+            if not field_format_return_dict["valid"]:
                 invalid = True
-                invalid_data.append((field_format_return_dict))
+                field_format_return_dict["value"] = ""
 
-                field_format_return_dict_copy = field_format_return_dict.copy()
-                field_format_return_dict_copy["value"] = ""
-                customer_list.append((field_format_return_dict_copy))
-
-        if user_type == "organization":
-            field_format_return_dict = finding_which_data(row_index, column_index,
-                                                          user_type, table_name, column_name, validation, field_type, value)
-            if field_format_return_dict["valid"]:
-                customer_list.append((field_format_return_dict))
-                invalid_data.append((field_format_return_dict))
-            else:
-                invalid = True
-                invalid_data.append((field_format_return_dict))
-
-                field_format_return_dict_copy = field_format_return_dict.copy()
-                field_format_return_dict_copy["value"] = ""
-                customer_list.append((field_format_return_dict_copy))
+            # Append to respective lists
+            customer_list.append(field_format_return_dict)
+            invalid_data.append(field_format_return_dict)
 
     if not invalid:
         invalid_data = []
@@ -465,6 +451,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
     customer_list = add_new_field_based_on_user_type(
         row_index, customer_list, context["which_user"])
 
+    organized_customer_list = []
     if context["which_user"] == CONTACT:
         skip = is_skip_data(row_index, context,
                             customer_list, retrive_customer_data)
@@ -774,7 +761,7 @@ def add_new_field(user_type, table_name, column_name, value, row_index):
     return field_format_dict
 
 
-def finding_which_data(row_index, column_index, user_type, table_name, column_name, validation, field_type, value):
+def finding_which_data(row_index, column_index, user_type, table_name, column_name, validation, field_type, value : str):
     field_format_dict = {}
     valid = check_validation(validation, field_type, value)
     value = valid["value"]
@@ -831,7 +818,7 @@ def check_validation(validation, field_type, value):
 def valid_value(value):
     value = "" if value == "." else value
     value = "" if pd.isna(value) else value
-    value = str(value) 
+    value = str(value).strip()
     value = value if len(value) != 0 else ""
     return value
 
@@ -1155,7 +1142,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
             customer_website = None
             customer_row_index = None
 
-            phone = None
+            phones = []
 
             addresses_line_1 = None
             addresses_line_2 = None
@@ -1246,7 +1233,7 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                     branch_addresses_row_index = value["value"]
 
                 if value["column_name"] == "number" and value["table_name"] == "phones":
-                    phone = value["value"]
+                    phones.append(value["value"])
 
                 if value["column_name"] == "first_name" and value["table_name"] == "users":
                     users_first_name = value["value"]
@@ -1277,8 +1264,8 @@ def users_and_phones_and_customer_group_addresess_mapping(row_ways_customer_list
                     if customer_email == customer_group_id_and_email[1] and customer_name == customer_group_id_and_email[2]:
                         if customer_row_index == customer_group_id_and_email[4] and customer_website == customer_group_id_and_email[3]:
                             # map customer_group_pk and phone number for phones table
-                            if phone:
-                                if len(str(phone)) != 0:
+                            if phones:
+                                for phone in phones:
                                     converted_number = re.sub(r'[^0-9]', '', str(phone))
                                     converted_number = re.sub(r'\D', '', converted_number)
                                     phone_number_and_customer_group.append(
