@@ -426,7 +426,7 @@ def divide_to_field_type_with_json_format(row_index, line, field_names, json_for
         field_type = details['field_type']
         column_index = details['sheet_header_index']
         field_name = field_names[column_index]
-        value : str = line[field_name]
+        value : str = str(line[field_name])
 
         # Split values if it's a number field containing commas
         values = value.split(',') if field_type == 'number' and ',' in value else [value]
